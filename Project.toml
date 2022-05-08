@@ -1,0 +1,13 @@
+name = "MaxwellFDTD"
+uuid = "750a45d2-4f0d-41f9-ad46-6d9394b934fa"
+authors = ["HaneWall"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+julia = "1"
+
+[targets]
+test = ["Test"]
