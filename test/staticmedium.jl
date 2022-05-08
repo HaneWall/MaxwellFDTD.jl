@@ -1,8 +1,9 @@
 using MaxwellFDTD
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 using CPUTime
 
-#testing 
+#testing code
 CPUtic()
 start = time()
 
