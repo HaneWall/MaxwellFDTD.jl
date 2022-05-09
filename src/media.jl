@@ -1,18 +1,22 @@
 abstract type Medium end
 
-struct StaticMedium <: Medium
-    grid :: Grid
+struct StaticMedium1D <: Medium
+    grid :: Grid1D
     location :: CartesianIndices{1, Tuple{UnitRange{Int64}}}
     ϵ_inf :: Float64
 end
 
-struct LorentzMedium <: Medium
-    grid :: Grid
+struct LorentzMedium1D <: Medium
+    grid :: Grid1D
     location :: CartesianIndices{1, Tuple{UnitRange{Int64}}}
     ϵ_inf :: Float64
-    γ :: Array{Float64, 1}
-    ω_0 :: Array{Float64, 1}
-    χ_1 :: Array{Float64, 1}
-    χ_2 :: Array{Float64, 1}
-    χ_3 :: Array{Float64, 1}
+    oscillators :: Int64
+    γ :: Vector{Float64}
+    ω_0 :: Vector{Float64}
+    χ_1 :: Vector{Float64}
+    χ_2 :: Vector{Float64}
+    χ_3 :: Vector{Float64}
+    function LorentzMedium1D(g::Grid1D, location::CartesianIndices{1, Tuple{UnitRange{Int64}}}, ϵ_inf::Float64, γ::Vector{Float64}, ω_0::Vector{Float64}, χ_1::Vector{Float64}, χ_2::Vector{Float64}, χ_3::Vector{Float64})
+        new(g, location, ϵ_inf, length(χ_1), γ, ω_0, χ_1, χ_2, χ_3)
+    end
 end
