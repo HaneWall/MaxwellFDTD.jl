@@ -20,7 +20,7 @@ mutable struct LorentzFields1D <: Field
     Jz :: Array{Float64}
     Pz :: Array{Float64}
     PzNl :: Array{Float64}
-    function LorentzFields1D(m::LorentzMedium)
+    function LorentzFields1D(m::LorentzMedium1D)
         new(zeros(Float64, (size(m.location)[1], m.oscillators)), zeros(Float64, (size(m.location)[1], m.oscillators)),zeros(Float64, (size(m.location)[1], m.oscillators)))
     end
 end

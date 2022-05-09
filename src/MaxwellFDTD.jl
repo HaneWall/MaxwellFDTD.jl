@@ -1,8 +1,8 @@
 module MaxwellFDTD
     include("constants.jl")
     include("grids.jl")
-    include("fields.jl")
     include("media.jl")
+    include("fields.jl")
     include("coefficients.jl")
     include("updateEqs.jl")
     include("detectors.jl")

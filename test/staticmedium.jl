@@ -18,8 +18,8 @@ g = Grid1D(SizeX, courant, Δx, MaxTime)
 F = Fields1D(g.SizeX)
 
 # 3. define and place media into the grid
-m1 = StaticMedium(g, CartesianIndices((60:80,)), 5.)
-m2 = StaticMedium(g, CartesianIndices((100:140,)), 9.)
+m1 = StaticMedium1D(g, CartesianIndices((60:80,)), 5.)
+m2 = StaticMedium1D(g, CartesianIndices((100:140,)), 9.)
 media = [m1, m2]
 
 # 4. define grid coefficients that respect ϵ_inf from the media 

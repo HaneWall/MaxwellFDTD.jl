@@ -17,7 +17,7 @@ function updateE!(F::Fields1D, M::LorentzFields1D, g::Grid1D, c::GridCoefficient
     end
 end
 
-function updateP!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium, g::Grid1D)
+function updateP!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
     @inbounds for osci in M.oscillators
         @. LF.Pz[M.location] = LF.Pz[M.location] + g.Δt/2 * (LF.Jz[M.location-CartesianIndex((1,))] + LF.Jz[M.location])
     end
