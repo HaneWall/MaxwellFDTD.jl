@@ -3,11 +3,16 @@ uuid = "750a45d2-4f0d-41f9-ad46-6d9394b934fa"
 authors = ["HaneWall"]
 version = "0.1.0"
 
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+[deps]
+CPUTime = "a9c8d775-2e2e-55fc-8582-045d282d599e"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 
 [compat]
 julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Test"]
