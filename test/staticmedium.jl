@@ -38,6 +38,11 @@ s1 = GaussianPointSource(CartesianIndex((20,)),true, true, false, 2., 70, 50.)
 s2 = SinusoidalPointSource(g, CartesianIndex((20,)), true, false, 1., 30.)
 sources = [s1]
 
+# 8. place boundaries
+b1 = LeftSideMurABC(g, CartesianIndex((1,)))
+b2 = RightSideMurABC(g, CartesianIndex((300,)))
+boundaries = [b1, b2]
+
 for timestep in 1:g.MaxTime
     updateH!(F, g, c_grid)
 
@@ -45,12 +50,19 @@ for timestep in 1:g.MaxTime
         sourceH!(source, F, timestep)
     end
 
-    ABC!(F, g)
+    for b in boundaries
+        saveFields!(b, F)
+    end
+    #ABC!(F, g)
 
     updateE!(F, g, c_grid)
 
     for source in sources
         sourceE!(source, F, timestep)
+    end
+
+    for b in boundaries
+        stepABC!(F, b)
     end
 
     for d in detectors 

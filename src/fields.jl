@@ -12,10 +12,13 @@ mutable struct MaterialFields1D <:Field
     Jz_old :: Vector{Float64}
     Jz :: Vector{Float64}
     Pz :: Vector{Float64}
+    PzNl :: Vector{Float64}
     function MaterialFields1D(g::Grid1D)
         new(zeros(Float64, g.SizeX), 
             zeros(Float64, g.SizeX),
-            zeros(Float64, g.SizeX))
+            zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX)
+            )
     end
 end
 

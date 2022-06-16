@@ -1,5 +1,10 @@
 abstract type Source end 
 
+
+function sigmoid(z::Real)
+    return 1.0 ./ (1.0 + exp(-z/8))
+end;
+
 struct GaussianPointSource <: Source 
     location :: CartesianIndex
     soft :: Bool
@@ -36,9 +41,9 @@ end
 
 function sourceE!(S::SinusoidalPointSource, F::Fields1D, timestep::Int64)
     if S.soft
-        F.Ez[S.location] += tanh(timestep/(10*S.ppw)) * S.amplitude * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
+        F.Ez[S.location] += tanh(timestep/(100*S.ppw)) * S.amplitude * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
     else
-        F.Ez[S.location] = tanh(timestep/(10*S.ppw)) * S.amplitude * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
+        F.Ez[S.location] = tanh(timestep/(100*S.ppw)) * S.amplitude * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
     end
 end
 
