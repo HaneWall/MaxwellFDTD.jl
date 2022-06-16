@@ -8,9 +8,9 @@ struct GridCoefficients1D <: Coeff
     Ceze :: Array{Float64, 1}
     function GridCoefficients1D(g::Grid1D, m::Vector{T}) where T<:Medium
         Chyh = fill(1.0,(g.SizeX))
-        Chye = fill(g.S_c / 377.0,(g.SizeX))
+        Chye = fill(g.Δt/(μ_0 * g.Δx),(g.SizeX))
         Ceze = fill(1.0,(g.SizeX))
-        Cezh = fill(g.S_c * 377.0,(g.SizeX))
+        Cezh = fill(g.Δt/(ϵ_0 * g.Δx),(g.SizeX))
         for medium in m
             Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
         end

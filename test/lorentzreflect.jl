@@ -9,10 +9,10 @@ CPUtic()
 start = time()
 
 # 1. define grid
-SizeX = 2000
+SizeX = 1000
 courant = 0.975
 Δx = 4.e-9
-MaxTime = 30000
+MaxTime = 2^14
 
 # 1. define grid
 g = Grid1D(SizeX, courant, Δx, MaxTime)
@@ -23,12 +23,12 @@ MF = MaterialFields1D(g)
 
 # 3. define and place media into the grid
 # parameters from bachelor thesis
-γ = [0., 0., 0.]
-ω_0 = [1.5494e16, 7.9514e15, 9.7766e13]
-χ_1 = [2.4272, 1.4617, 9.6536]
-χ_2 = [30e-12, 0., 0.]
-χ_3 = [0., 0., 0.]
-m1 = LorentzMedium1D(g, CartesianIndices((1700:1900,)), 1., γ, ω_0, χ_1, χ_2, χ_3)
+γ = [0.]
+ω_0 = [1.5494e15]
+χ_1 = [2.4272]
+χ_2 = [30e-12]
+χ_3 = [0.]
+m1 = LorentzMedium1D(g, CartesianIndices((10:990,)), 1., γ, ω_0, χ_1, χ_2, χ_3)
 media = [m1]
 
 # 4. define grid coefficients that respect ϵ_inf from the media 
@@ -40,15 +40,15 @@ LF = [LF1]
 
 # 6. place detectors 
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
-d2 = PointDetector(CartesianIndex((5,)), 1, g.MaxTime)
-d3 = PointDetector(CartesianIndex((1751,)), 1, g.MaxTime)
-detectors = [d1, d2, d3]
+d2 = PointDetector(CartesianIndex((4,)), 1, g.MaxTime)
+d3 = PointDetector(CartesianIndex((995,)), 1, g.MaxTime)
+d4 = PointDetector(CartesianIndex((11,)), 1, g.MaxTime)
+detectors = [d1, d2, d3, d4]
 
 # 7. place sources 
-s0 = GaussianWavePointSource(g, CartesianIndex((100,)),true, true, false, 1., 8500, 20e-15, 266.)
-s1 = GaussianPointSource(CartesianIndex((20,)),true, true, false, 1., 90, 500.)
-s2 = SinusoidalPointSource(g, CartesianIndex((5,)), true, false, 1., 266.)
-s3 = RickerPointSource(g, CartesianIndex((15,)), true, false, 0.5, 1000, 266.)
+amplitude = intensity2amplitude(10.0^12)
+
+s0 = GaussianWavePointSource(g, CartesianIndex((7,)),false, false, false, amplitude, 8500, 20e-15, 266.)
 sources = [s0]
 
 # 8. place boundaries
@@ -96,15 +96,6 @@ CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3)," seconds")
 println("Computation Complete")
 
-
-function epsilon_complex(γ, ω_0, χ_1, ω)
-    eps_complex = zeros(ComplexF64, length(ω)) .+ 1.
-    for idx = 1:length(γ)
-        @. eps_complex += χ_1[idx] * (ω_0[idx]^2) / (ω_0[idx]^2 - ω^2 + 1im * γ[idx] * ω)
-    end
-    return eps_complex
-end
-
 function waterfall_plot(ts_min, ts_max)
     f = Figure(resolution = (800, 1200))
     ax1 = Axis(f[1, 1],title = "Waterfall Plot", ylabel = "timestep%10", xlabel = L"E_z")
@@ -113,34 +104,44 @@ function waterfall_plot(ts_min, ts_max)
     end
 
     for (idx, t) in enumerate(ts_min:100:ts_max)
-        lines!(ax1, first(d1.location)[1]:last(d1.location)[1], d1.Ez[t, :] .+ idx, color=:black, linewidth=1.5)
+        lines!(ax1, first(d1.location)[1]:last(d1.location)[1], d1.Ez[t, :]./amplitude .+ idx, color=:black, linewidth=1.5)
     end
 
     ax2 = Axis(f[2, 1],title = "Waterfall Plot", ylabel = "timestep%10", xlabel = L"timestep")
 
-    lines!(ax2, log10.(abs.(d3.Pz)), color=:black, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d3.Jz)), color=:red, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d2.Ez)), color=:gray50, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d3.Ez)), color=:blue, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d3.PzNl)), color=:green, linewidth=1.5)
+    # for (idx, t) in enumerate(11500:1:11540)
+    #     lines!(ax2, d3.Jz[t], color=:black, linewidth=1.5)
+    #     #ylims!(ax2, -19, -10)
+    # end
+    lines!(ax2, log10.(abs.(d2.Ez)), color=:black, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d3.Ez)), color=:red, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.Pz)), color=:green, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.Jz)), color=:yellow, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.PzNL)), color=:gray50, linewidth=1.5)
     xlims!(ax2, 1740, g.MaxTime)
     f
 end
 
 function spectrum_plot()
     Δf = 1/g.Δt
-    spectrum = fftshift(fft(d2.Ez))
-    spectrum_P = fftshift(fft(d3.Pz))
-    spectrum_J = fftshift(fft(d3.Jz))
     freqs = fftshift(fftfreq(MaxTime, Δf))
-    f1 = Figure(resolution = (800, 800))
-    ax2 = Axis(f1[1, 1])
-    lines!(ax2, 2*π*freqs, abs.(spectrum)./maximum(abs.(spectrum)))
-    lines!(ax2, 2*π*freqs, abs.(spectrum_J./maximum(abs.(spectrum_J))))
-    #lines!(ax2, 2*π*freqs, abs.(spectrum_P)./maximum(abs.(spectrum_P)))
-    lines!(ax2, 2*π*freqs, real.(epsilon_complex(γ, ω_0, χ_1, 2*π*freqs)))
-    #lines!(ax2, 2*π*freqs, imag.(epsilon_complex(γ, ω_0, χ_1, 2*π*freqs)))
-    xlims!(ax2, 0, 17.6e15)
-    ylims!(ax2, -10, 10)
-    f1
+    spectrum_P = fftshift(fft(d4.Pz./MaxTime))
+    spectrum_E_reflect = fftshift(fft(d2.Ez./MaxTime))
+    spectrum_E_trans = fftshift(fft(d3.Ez./MaxTime))
+
+    f = Figure(resolution = (800, 800))
+    ax1 = Axis(f[1, 1],title = "Spectrum P in Media", ylabel = L"|F(P_z)|", xlabel = L"$\omega$")
+    lines!(ax1, 2*π*freqs, abs.(spectrum_P)./maximum(abs.(spectrum_P)))
+    xlims!(ax1, 0, 5e15)
+
+    ax2 = Axis(f[1, 2],title = "TimeSeries P in Media", ylabel = L"P_z", xlabel = L"$t$")
+    lines!(ax2, d4.Pz)
+
+    ax3 = Axis(f[2, 1],title = "Spectrum E-Reflection", ylabel = L"|$F(E_z)$|", xlabel = L"$\omega$")
+    lines!(ax3, 2*π*freqs, abs.(spectrum_E_reflect)./maximum(abs.(spectrum_E_reflect)))
+    xlims!(ax3, 0, 5e15)
+
+    ax4 = Axis(f[2, 2],title = "TimeSeries E Reflection", ylabel = L"E_z", xlabel = L"$t$")
+    lines!(ax4, d2.Ez)
+    f
 end

@@ -1,4 +1,8 @@
-# these are the update Functions for the one-dimesional Case
+
+#=
+ These are the update equations in  the one-dimesional Case
+=#
+
 function updateE!(F::Fields1D, g::Grid1D, c::GridCoefficients1D)
     @inbounds for mm = 2:g.SizeX-1
         F.Ez[mm] = c.Ceze[mm] * F.Ez[mm] + c.Cezh[mm] * (F.Hy[mm] - F.Hy[mm-1])
@@ -24,7 +28,6 @@ function updateJ!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D,
             LF.Jz[mm, osci] = (1.0-M.Γ[osci])/(1.0+M.Γ[osci])*LF.Jz[mm, osci] + (g.Δt*(M.ω_0[osci])^2)/(1.0+M.Γ[osci]) * (LF.PzNl[mm, osci] - LF.Pz[mm, osci]) 
         end
     end
-    #MF.Jz_old[M.location] .= MF.Jz[M.location]
     MF.Jz[M.location] .= sum(LF.Jz, dims=2)[:]
 end
 

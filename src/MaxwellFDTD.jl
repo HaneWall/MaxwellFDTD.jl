@@ -10,7 +10,7 @@ module MaxwellFDTD
     include("sources.jl")
     
     export c_0, μ_0, ϵ_0
-    export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!
+    export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!, intensity2amplitude
     export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!
     export Fields1D, MaterialFields1D, LorentzFields1D
     export Grid1D, Grid2D, Grid3D

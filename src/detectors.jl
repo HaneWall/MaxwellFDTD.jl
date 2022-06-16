@@ -6,7 +6,7 @@ struct PointDetector <: Detector
     t_step_end :: Int64
     Ez :: Vector{Float64}
     Pz :: Vector{Float64}
-    PzNL :: Vector{Float64}
+    PzNl :: Vector{Float64}
     Jz :: Vector{Float64}
     function PointDetector(location::CartesianIndex, t_step_start::Int64, t_step_end::Int64)
         new(location, t_step_start, t_step_end, 
@@ -74,4 +74,7 @@ function safeJ!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
     if timestep >= D.t_step_start && timestep <= D.t_step_end
         D.Jz[timestep-D.t_step_start+1, :] = MF.Jz[D.location]
     end
+end
+
+function safePNl!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
 end

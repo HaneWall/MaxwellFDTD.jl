@@ -5,6 +5,11 @@ function sigmoid(z::Real)
     return 1.0 ./ (1.0 + exp(-z/8))
 end;
 
+function intensity2amplitude(intensity::Float64)
+    amplitude = sqrt(intensity * 2/(c_0*ϵ_0))
+    return amplitude
+end 
+
 struct GaussianPointSource <: Source 
     location :: CartesianIndex
     soft :: Bool
@@ -69,7 +74,7 @@ end
 
 function sourceE!(S::GaussianWavePointSource, F::Fields1D, timestep::Int64)
     if S.soft
-        F.Ez[S.location] += S.amplitude * exp(-2*log(2)*((timestep - S.t_step_peak)*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
+        F.Ez[S.location] += S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - (S.location[1] - 0.5)))
         #F.Ez[S.location] += S.amplitude * exp(-(timestep - S.t_step_peak)^2/S.t_width) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
     else
         F.Ez[S.location] = S.amplitude * exp(-2*log(2)*((timestep - S.t_step_peak)*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
@@ -78,7 +83,7 @@ end
 
 function sourceH!(S::GaussianWavePointSource, F::Fields1D, timestep::Int64)
     if S.soft && S.sf_left
-        F.Hy[S.location - CartesianIndex((1,))] -= S.amplitude * exp(-(timestep - (S.t_step_peak+1))^2/S.t_width) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1])) / 377.
+        F.Hy[S.location - CartesianIndex((1,))] -= S.grid.S_c * S.amplitude * exp(-2*log(2)*((timestep - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep) - S.location[1])) / 376.730
     elseif S.soft && S.sf_right
         F.Hy[S.location + CartesianIndex((1,))] += S.amplitude * exp(-(timestep - (S.t_step_peak-1))^2/S.t_width) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1])) /377.
     end
