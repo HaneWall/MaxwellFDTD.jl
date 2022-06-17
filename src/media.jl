@@ -22,6 +22,16 @@ struct LorentzMedium1D <: Medium
     end
 end
 
+struct TunnelMedium1D <: Medium
+    grid :: Grid1D
+    location :: CartesianIndices{1, Tuple{UnitRange{Int64}}}
+    E_gap :: Float64
+    n_0 :: Float64
+    function TunnelMedium1D(g::Grid1D, location::CartesianIndices{1, Tuple{UnitRange{Int64}}}, bandgap::Float64, mol_density::Float64)
+        new(g, location, bandgap, mol_density)
+    end
+end
+
 
 #=
  These are the medias in  the two-dimesional Case.

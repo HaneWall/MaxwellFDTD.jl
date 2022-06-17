@@ -8,8 +8,9 @@ module MaxwellFDTD
     include("detectors.jl")
     include("abcs.jl")
     include("sources.jl")
+    include("fft_utilities.jl")
     
-    export c_0, μ_0, ϵ_0
+    export c_0, μ_0, ϵ_0, q_0, m_e
     export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!, intensity2amplitude
     export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!
     export Fields1D, MaterialFields1D, LorentzFields1D
@@ -18,4 +19,5 @@ module MaxwellFDTD
     export updateE!, updateH!, updateJ!, updateP!, updatePNl!
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!
     export LorentzMedium1D, StaticMedium1D
+    export mytukey
 end

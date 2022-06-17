@@ -1,4 +1,4 @@
-
+using LinearAlgebra
 #=
  These are the update equations in  the one-dimesional Case
 =#
@@ -44,6 +44,21 @@ function updatePNl!(MF::MaterialFields1D, LF::LorentzFields1D, F::Fields1D, M::L
         @. LF.PzNl[:, osci] = ϵ_0 * (M.χ_1[osci]*F.Ez[M.location] + M.χ_2[osci] * F.Ez[M.location]^2 + M.χ_3[osci] * F.Ez[M.location]^3)
     end
     MF.PzNl[M.location] .= sum(LF.PzNl, dims=2)[:]
+end
+
+
+function update_Γ_ADK!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
+    @. TF.Γz_ADK[:] = Γ_ADK(M.E_gap * q_0, F.Ez)
+end
+
+function update_displacement!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
+    @. TF.dz_T[:] = M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location])) 
+end
+
+function update_cb_population!(MF::MaterialFields1D, TF::TunnelFields1D, M::TunnelMedium1D)
+    # really simple Euler integration , maybe leapfrogging between gamma and rho is better 
+        ρ_cb_old = 
+    @. TF.ρ_cb[:] +=  1
 end
 
 #=

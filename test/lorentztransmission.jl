@@ -4,6 +4,7 @@ CairoMakie.activate!(type = "svg")
 using CPUTime
 using FFTW
 using ProgressBars
+using DSP
 
 #testing code
 CPUtic()
@@ -19,12 +20,13 @@ MaxTime = 2^15
 # Bachelor Parameters Lorentz Slab 
 λ = 1.75e-5
 ω_central = 2 * π * c_0 / λ
+t_fwhm = 600e-15
 ppw = λ / Δx
 amplitude = 2.
 γ = [8e12, 9e14]
 ω_0 = [1.2566e14, 1.2e13]
 χ_1 = [2.1, 2.4]
-χ_2 = [30e-10, 0.]
+χ_2 = [30e-12, 0.]
 χ_3 = [0., 0.]
 
 function epsilon_complex(γ, ω_0, χ_1, ω)
@@ -110,6 +112,35 @@ CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3)," seconds")
 println("Computation Complete")
 
+
+function semilog(a::Float64)
+    return sign(a) * log10(abs(a))
+end
+
+function semilog_timeseries()
+    f = Figure(resolution = (800, 800))
+    
+    ax1 = Axis(f[1, 1], 
+        title = "First Cell Medium", 
+        ylabel = L"|(P_z)|", 
+        xlabel = "t in ps", 
+        ylabelsize = 18, 
+        xlabelsize = 18, 
+        yminorticksvisible=true,
+        yminorticks=IntervalsBetween(9),
+        yscale=log10,
+        xgridstyle = :dash, 
+        ygridstyle = :dash, 
+        xtickalign = 1,
+        xticksize = 8, 
+        ytickalign = 1, 
+        yticksize = 8, 
+        xlabelpadding = -8)
+
+    lines!(ax1,  t*10^12, abs.(d4.Pz) .+ 10e-12)
+    f
+end
+
 function spectrum_plot()
     Δf = 1/g.Δt
     freqs = fftshift(fftfreq(MaxTime, Δf))
@@ -117,6 +148,15 @@ function spectrum_plot()
     spectrum_P = fftshift(fft(d4.Pz))
     spectrum_E_reflect = fftshift(fft(d2.Ez))
     spectrum_E_trans = fftshift(fft(d3.Ez))
+
+    broadness = Int(ceil(t_fwhm*13/g.Δt))
+    broad_idx_mean = ceil(broadness/2)
+    signal_p_idx_max = argmax(abs.(d4.Pz))
+    shift_p = Int(signal_p_idx_max - broad_idx_mean)
+    window_p =  blackman(broadness; padding=length(t) - broadness)
+    window_p = circshift(window_p, shift_p)
+
+    spectrum_E_reflect_window = fftshift(fft(d2.Ez .* window_p))
 
     ϵ_real = real.(epsilon_complex(γ, ω_0, χ_1, 2*π*freqs))
     ϵ_imag = imag.(epsilon_complex(γ, ω_0, χ_1, 2*π*freqs)) 
@@ -129,7 +169,7 @@ function spectrum_plot()
     @. n_i = sqrt(1/2 *(sqrt(ϵ_real^2 + ϵ_imag^2) - ϵ_real))
 
 
-    f = Figure(resolution = (800, 800), font = "CM Roman")
+    f = Figure(resolution = (800, 800))
     
     ax1 = Axis(f[1, 1],
                 title = "First Cell Medium", 
@@ -150,6 +190,7 @@ function spectrum_plot()
 
     ax2 = Axis(f[1, 2],title = "Time Series P First Cell Medium", ylabel = L"P_z", xlabel = "t in ps")
     lines!(ax2, t*10^12, d4.Pz./maximum(d4.Pz))
+    lines!(ax2, t*10^12, window_p)
 
     ax3 = Axis(f[2, 1],
                 title = L"E_{Reflection}", 
@@ -165,10 +206,12 @@ function spectrum_plot()
                 yticksize = 8, 
                 xlabelpadding = -8)
     lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect./MaxTime)))
+    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect_window./MaxTime)))
     xlims!(ax3, 0, 4)
 
     ax4 = Axis(f[2, 2],title = "Time Series E Reflection", ylabel = L"E_z", xlabel = "t in ps")
     lines!(ax4, t*10^12, d2.Ez)
+    #lines!(ax4, t*10^12, d2.Ez.* window_p)
 
     ax5 = Axis(f[3, 1],
                 title = L"E_{Transmission}", 

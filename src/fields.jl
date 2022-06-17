@@ -36,6 +36,26 @@ mutable struct LorentzFields1D <: Field
     end
 end
 
+mutable struct TunnelFields1D <: Field
+    Jz_T :: Array{Float64}
+    Pz_T :: Array{Float64}
+    Jz_T_brunel :: Array{Float64}
+    ρ_cb :: Array{Float64}
+    der_ρ_cb :: Array{Float64}
+    Γz_ADK :: Array{Float64}
+    dz_T :: Array{Float64}
+    function TunnelFields1D(m::TunnelMedium1D)
+        new(
+            zeros(Float64, (size(m.location)[1])), 
+            zeros(Float64, (size(m.location)[1])),
+            zeros(Float64, (size(m.location)[1])),
+            zeros(Float64, (size(m.location)[1])),
+            zeros(Float64, (size(m.location)[1])),
+            zeros(Float64, (size(m.location)[1]))
+            )
+    end
+end
+
 #=
  These are the Fields in  the two-dimesional Case.
 =#
