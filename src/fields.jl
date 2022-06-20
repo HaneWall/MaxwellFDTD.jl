@@ -15,8 +15,12 @@ mutable struct MaterialFields1D <:Field
     Jz :: Vector{Float64}
     Pz :: Vector{Float64}
     PzNl :: Vector{Float64}
+    ρ_cb :: Vector{Float64}
+    Γ_ADK :: Vector{Float64}
     function MaterialFields1D(g::Grid1D)
         new(zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX),
             zeros(Float64, g.SizeX),
             zeros(Float64, g.SizeX)
             )
@@ -36,19 +40,23 @@ mutable struct LorentzFields1D <: Field
     end
 end
 
+mutable struct DrudeFields1D <: Field
+    Jz_free :: Array{Float64}
+    function DrudeFields1D(m::DrudeMedium1D)
+        new(
+            zeros(Float64, (size(m.location)[1]))
+        )
+    end
+end
+
 mutable struct TunnelFields1D <: Field
-    Jz_T :: Array{Float64}
-    Pz_T :: Array{Float64}
+    Jz_tunnel :: Array{Float64}
+    Pz_tunnel :: Array{Float64}
     Jz_T_brunel :: Array{Float64}
-    ρ_cb :: Array{Float64}
-    der_ρ_cb :: Array{Float64}
-    Γz_ADK :: Array{Float64}
     dz_T :: Array{Float64}
     function TunnelFields1D(m::TunnelMedium1D)
         new(
             zeros(Float64, (size(m.location)[1])), 
-            zeros(Float64, (size(m.location)[1])),
-            zeros(Float64, (size(m.location)[1])),
             zeros(Float64, (size(m.location)[1])),
             zeros(Float64, (size(m.location)[1])),
             zeros(Float64, (size(m.location)[1]))

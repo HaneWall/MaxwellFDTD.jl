@@ -42,3 +42,13 @@ end
 function stepABC!(F::Fields1D, B::RightSideMurABC)
     F.Ez[B.location] = B.prev_array[1] + (B.courant - 1)/(B.courant + 1) * (F.Ez[B.location - CartesianIndex((1,))] - B.prev_array[2])
 end
+
+#=
+ These are the update equations in  the three-dimesional Case
+=#
+
+
+struct CPMLABC <: ABC
+    thickness :: Int64
+    
+end

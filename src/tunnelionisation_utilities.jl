@@ -18,3 +18,7 @@ function Γ_ADK(I_p::Float64, E::Float64; Z::Integer=1, l::Integer=0, m::Integer
     Γ[isinf(Gamma)]=0;
     return Γ
 end
+
+function ω_plasma(ρ::Float64)
+    return abs((q_0^2 * ρ / ϵ_0* m_0))^(1/2)
+end

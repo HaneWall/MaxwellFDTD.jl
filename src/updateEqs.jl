@@ -46,6 +46,15 @@ function updatePNl!(MF::MaterialFields1D, LF::LorentzFields1D, F::Fields1D, M::L
     MF.PzNl[M.location] .= sum(LF.PzNl, dims=2)[:]
 end
 
+function updateJfree!(MF::MaterialFields1D, DF::DrudeFields1D, F::Fields1D, M::DrudeMedium1D, g::Grid1D)
+    @. DF.Jz_free[:] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:] + ϵ_0 * g.Δt * ω_plasma(MF.ρ_cb[M.location])^2 * F.Ez[M.location]/(1 + M.Γ)
+    @. MF.Jz[M.location] += DF.Jz_free[:]
+end
+
+function updateJtunnel!(MF::MaterialFields1D, TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D, g::Grid1D)
+    @. TF.Jz_tunnel[:] = M.n_0*M.E_gap
+    @. MF.Jz[M.location] += TF.Jz_tunnel[:]
+end
 
 function update_Γ_ADK!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
     @. TF.Γz_ADK[:] = Γ_ADK(M.E_gap * q_0, F.Ez)
@@ -55,10 +64,11 @@ function update_displacement!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D
     @. TF.dz_T[:] = M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location])) 
 end
 
-function update_cb_population!(MF::MaterialFields1D, TF::TunnelFields1D, M::TunnelMedium1D)
+function update_cb_population!(TF::TunnelFields1D, M::TunnelMedium1D)
     # really simple Euler integration , maybe leapfrogging between gamma and rho is better 
-        ρ_cb_old = 
-    @. TF.ρ_cb[:] +=  1
+    @inbounds for mm in 1:length(M.location)
+        TF.ρ_cb[mm] +=  TF.Γz_ADK[mm] *  M.grid.Δt * (1 - TF.ρ_cb[mm])
+    end
 end
 
 #=
