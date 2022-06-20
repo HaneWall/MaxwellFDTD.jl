@@ -60,8 +60,8 @@ for timestep in 1:g.MaxTime
 
     for (m_idx, m) in enumerate(media)
         updatePNl!(MF, LF[m_idx], F, m)
-        updateJ!(MF, LF[m_idx], m, g)
-        updateP!(MF, LF[m_idx], m, g)
+        updateJbound!(MF, LF[m_idx], m, g)
+        updatePbound!(MF, LF[m_idx], m, g)
     end
 
     updateH!(F, g, c_grid)

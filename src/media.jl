@@ -26,7 +26,7 @@ struct TunnelMedium1D <: Medium
     grid :: Grid1D
     location :: CartesianIndices{1, Tuple{UnitRange{Int64}}}
     E_gap :: Float64
-    n_0 :: Float64
+    ρ_mol_density :: Float64
     function TunnelMedium1D(g::Grid1D, location::CartesianIndices{1, Tuple{UnitRange{Int64}}}, bandgap::Float64, mol_density::Float64)
         new(g, location, bandgap, mol_density)
     end
@@ -36,14 +36,12 @@ struct DrudeMedium1D <: Medium
     grid :: Grid1D
     location :: CartesianIndices{1, Tuple{UnitRange{Int64}}}
     γ :: Float64
+    ρ_mol_density :: Float64
     Γ :: Float64
-    function DrudeMedium1D(g::Grid1D, location::CartesianIndices{1, Tuple{UnitRange{Int64}}}, damping::Float64)
-        new(g, location, damping, damping*g.Δt/2)
+    function DrudeMedium1D(g::Grid1D, location::CartesianIndices{1, Tuple{UnitRange{Int64}}}, damping::Float64, mol_density::Float64)
+        new(g, location, damping, mol_density, damping*g.Δt/2)
     end
 end
-
-struct Plasma1D <: Medium
-    
 
 #=
  These are the medias in  the two-dimesional Case.

@@ -50,10 +50,10 @@ mutable struct DrudeFields1D <: Field
 end
 
 mutable struct TunnelFields1D <: Field
-    Jz_tunnel :: Array{Float64}
-    Pz_tunnel :: Array{Float64}
-    Jz_T_brunel :: Array{Float64}
-    dz_T :: Array{Float64}
+    Jz_tunnel :: Vector{Float64}
+    Pz_tunnel :: Vector{Float64}
+    Jz_T_brunel :: Vector{Float64}
+    dz_T :: Vector{Float64}
     function TunnelFields1D(m::TunnelMedium1D)
         new(
             zeros(Float64, (size(m.location)[1])), 

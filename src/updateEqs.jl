@@ -21,7 +21,7 @@ function updateH!(F::Fields1D, g::Grid1D, c::GridCoefficients1D)
     end
 end
 
-function updateJ!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
+function updateJbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
     @inbounds for osci in 1:M.oscillators
         for mm in 1:length(M.location)
             LF.Jz[mm, osci] = (1.0-M.Γ[osci])/(1.0+M.Γ[osci])*LF.Jz[mm, osci] + (g.Δt*(M.ω_0[osci])^2)/(1.0+M.Γ[osci]) * (LF.PzNl[mm, osci] - LF.Pz[mm, osci]) 
@@ -30,7 +30,7 @@ function updateJ!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D,
     MF.Jz[M.location] .= sum(LF.Jz, dims=2)[:]
 end
 
-function updateP!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
+function updatePbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
     @inbounds for osci in 1:M.oscillators
         for mm in 1:length(M.location)
             LF.Pz[mm, osci] = LF.Pz[mm, osci] + g.Δt * (LF.Jz[mm, osci])
@@ -46,29 +46,33 @@ function updatePNl!(MF::MaterialFields1D, LF::LorentzFields1D, F::Fields1D, M::L
     MF.PzNl[M.location] .= sum(LF.PzNl, dims=2)[:]
 end
 
-function updateJfree!(MF::MaterialFields1D, DF::DrudeFields1D, F::Fields1D, M::DrudeMedium1D, g::Grid1D)
-    @. DF.Jz_free[:] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:] + ϵ_0 * g.Δt * ω_plasma(MF.ρ_cb[M.location])^2 * F.Ez[M.location]/(1 + M.Γ)
+function updateJfree!(MF::MaterialFields1D, DF::DrudeFields1D, F::Fields1D, M::DrudeMedium1D)
+    @. DF.Jz_free[:] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:] + ϵ_0 * M.grid.Δt * ω_plasma(MF.ρ_cb[M.location] * M.ρ_mol_density)^2 * F.Ez[M.location]/(1 + M.Γ)
     @. MF.Jz[M.location] += DF.Jz_free[:]
 end
 
-function updateJtunnel!(MF::MaterialFields1D, TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D, g::Grid1D)
-    @. TF.Jz_tunnel[:] = M.n_0*M.E_gap
+function updateJtunnel!(MF::MaterialFields1D, TF::TunnelFields1D, M::TunnelMedium1D)
+    @. TF.Jz_tunnel[:] = TF.dz_T[:]*(1 - MF.ρ_cb[M.location])*MF.Γ_ADK[M.location]
     @. MF.Jz[M.location] += TF.Jz_tunnel[:]
 end
 
-function update_Γ_ADK!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
-    @. TF.Γz_ADK[:] = Γ_ADK(M.E_gap * q_0, F.Ez)
+function updatePlasma!(MF::MaterialFields1D, TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
+    update_Γ_ADK!(MF, F, M)
+    update_cb_population!(MF, M)
+    update_displacement!(TF, F, M)
+end
+
+function update_Γ_ADK!(MF::MaterialFields1D, F::Fields1D, M::TunnelMedium1D)
+    MF.Γ_ADK[M.location] = Γ_ADK(F.Ez[M.location], M.E_gap * q_0, 1, 0, 0)
 end
 
 function update_displacement!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
-    @. TF.dz_T[:] = M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location])) 
+    @. TF.dz_T[:] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location])) 
 end
 
-function update_cb_population!(TF::TunnelFields1D, M::TunnelMedium1D)
-    # really simple Euler integration , maybe leapfrogging between gamma and rho is better 
-    @inbounds for mm in 1:length(M.location)
-        TF.ρ_cb[mm] +=  TF.Γz_ADK[mm] *  M.grid.Δt * (1 - TF.ρ_cb[mm])
-    end
+function update_cb_population!(MF::MaterialFields1D, M::TunnelMedium1D)
+    # really simple Euler integration 
+    @. MF.ρ_cb[M.location] +=  MF.Γ_ADK[M.location] *  M.grid.Δt * (1 - MF.ρ_cb[M.location])
 end
 
 #=
@@ -162,7 +166,7 @@ function updateE!(F::Fields3D, MF::MaterialFields3D, g::Grid3D, c::GridCoefficie
     return Ex,Ey,Ez
 end
 
-function updateJ!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid3D)
+function updateJbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid3D)
     @inbounds for osci in 1:M.oscillators
         for pp in 1:size(M.location)[3]
             for nn in 1:size(M.location)[2]
@@ -177,7 +181,7 @@ function updateJ!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D,
     MF.Jz[M.location] .= sum(LF.Jz, dims=4)[:]
 end
 
-function updateP!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid1D)
+function updatePbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid1D)
     @inbounds for osci in 1:M.oscillators
         for pp in 1:size(M.location)[3]
             for nn in 1:size(M.location)[2]

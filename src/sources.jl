@@ -10,6 +10,11 @@ function intensity2amplitude(intensity::Float64)
     return amplitude
 end 
 
+function laserfluence(amplitude, τ)
+    f = sqrt(π/2) * c_0 * ϵ_0 * τ / 2 * amplitude^2
+    return f
+end
+
 struct GaussianPointSource <: Source 
     location :: CartesianIndex
     soft :: Bool
