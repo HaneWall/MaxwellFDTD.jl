@@ -13,7 +13,7 @@ module MaxwellFDTD
     
     export c_0, μ_0, ϵ_0, q_0, m_e
     export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!, intensity2amplitude, laserfluence
-    export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!
+    export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!
     export Fields1D, MaterialFields1D, LorentzFields1D, DrudeFields1D, TunnelFields1D
     export Grid1D, Grid2D, Grid3D
     export GridCoefficients1D

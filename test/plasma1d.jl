@@ -1,8 +1,10 @@
 using MaxwellFDTD
 using CPUTime
 using FFTW
+using GLMakie
 using ProgressBars
 using DSP
+GLMakie.activate!()
 
 
 CPUtic()
@@ -12,7 +14,11 @@ start = time()
 SizeX = 500
 courant = 0.975
 Δx = 2e-9
-MaxTime = 2^15
+MaxTime = 2^18
+
+# 1. define grid
+g = Grid1D(SizeX, courant, Δx, MaxTime)
+t = g.Δt:g.Δt:g.Δt*MaxTime
 
 # varin paramters Si02
 ρ_mol_density = 2.2e28
@@ -21,7 +27,7 @@ MaxTime = 2^15
 ω_0 = [2.75e16] # this might not work, use 2*π*/g.Δt instead (old varin paper/bachelor thesis)
 χ_1 = [1.1025]
 χ_2 = [0.]
-χ_3 = [2e-22]
+χ_3 = [0.]
 
 # drude parameters
 γ_plasma = 1e15
@@ -33,21 +39,17 @@ E_gap = 9.
 λ = 800e-9
 ω_central = 2 * π * c_0 / λ
 ppw = λ/Δx
-t_fwhm = 10e-15 # intensity FWHM
+t_fwhm = 8e-15 # intensity FWHM
 amplitude = intensity2amplitude(12e16) # 12TWcm^-2
 
-
-# 1. define grid
-g = Grid1D(SizeX, courant, Δx, MaxTime)
-t = g.Δt:g.Δt:g.Δt*MaxTime
 
 # 2. define fields that exist everywhere
 F = Fields1D(g)
 MF = MaterialFields1D(g)
 
-m1 = LorentzMedium1D(g, CartesianIndices((300:450,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium1D(g, CartesianIndices((300:450,)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium1D(g, CartesianIndices((300:450,)), E_gap, ρ_mol_density)
+m1 = LorentzMedium1D(g, CartesianIndices((400:400,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium1D(g, CartesianIndices((400:400,)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium1D(g, CartesianIndices((400:400,)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -68,11 +70,11 @@ TF = [TF1]
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 d2 = PointDetector(CartesianIndex((3,)), 1, g.MaxTime)
 d3 = PointDetector(CartesianIndex((460,)), 1, g.MaxTime)
-d4 = PointDetector(CartesianIndex((300,)), 1, g.MaxTime)
+d4 = PointDetector(CartesianIndex((400,)), 1, g.MaxTime)
 detectors = [d1, d2, d3, d4]
 
 # 7. place sources 
-s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude, 8500, t_fwhm, ppw)
+s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, 2*amplitude, 100000, t_fwhm, ppw)
 sources = [s0]
 
 # 8. place boundaries
@@ -118,6 +120,7 @@ for timestep in ProgressBar(1:g.MaxTime)
     end
 
     for d in detectors 
+        safeΓ_ADK!(d, MF, timestep)
         safeE!(d, F, timestep)
         safeP!(d, MF, timestep)
         safeJ!(d, MF, timestep)
@@ -167,8 +170,8 @@ function spectrum_plot()
     xlims!(ax1, 0, 15)
 
     ax2 = Axis(f[1, 2],title = "Time Series P First Cell Medium", ylabel = L"J_z", xlabel = "t in ps")
-    lines!(ax2, t*10^12, d4.Jz./maximum(d4.Jz))
-    lines!(ax2, t*10^12, window_p)
+    lines!(ax2, t*10^15, d4.Jz./maximum(d4.Jz))
+    lines!(ax2, t*10^15, window_p)
 
     ax3 = Axis(f[2, 1],
                 title = L"$E_{Reflection}$", 
@@ -188,7 +191,7 @@ function spectrum_plot()
     xlims!(ax3, 0, 15)
 
     ax4 = Axis(f[2, 2],title = "Time Series E Reflection", ylabel = L"E_z", xlabel = "t in ps")
-    lines!(ax4, t*10^12, d2.Ez)
+    lines!(ax4, t*10^15, d2.Ez)
     #lines!(ax4, t*10^12, d2.Ez.* window_p)
 
     ax5 = Axis(f[3, 1],
@@ -209,7 +212,7 @@ function spectrum_plot()
     xlims!(ax5, 0, 15)
 
     ax6 = Axis(f[3, 2],title = "Time Series E Transmission", ylabel = L"E_z", xlabel = "t in ps")
-    lines!(ax6,t*10^12, d3.Ez)
+    lines!(ax6,t*10^15, d3.Ez)
     f
 end
 

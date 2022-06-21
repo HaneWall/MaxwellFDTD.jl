@@ -22,6 +22,10 @@ struct GridCoefficients1D <: Coeff
     end
 end
 
+struct FieldIonization1D <: Coeff
+    grid :: Grid1D
+end
+
 #=
  These are the coefficients in the two-dimensional Case.
 =#

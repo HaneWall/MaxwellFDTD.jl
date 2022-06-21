@@ -51,14 +51,10 @@ end
 
 mutable struct TunnelFields1D <: Field
     Jz_tunnel :: Vector{Float64}
-    Pz_tunnel :: Vector{Float64}
-    Jz_T_brunel :: Vector{Float64}
     dz_T :: Vector{Float64}
     function TunnelFields1D(m::TunnelMedium1D)
         new(
             zeros(Float64, (size(m.location)[1])), 
-            zeros(Float64, (size(m.location)[1])),
-            zeros(Float64, (size(m.location)[1])),
             zeros(Float64, (size(m.location)[1]))
             )
     end
