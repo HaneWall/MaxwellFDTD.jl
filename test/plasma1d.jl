@@ -78,7 +78,7 @@ d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 d2 = PointDetector(CartesianIndex((3,)), 1, g.MaxTime)
 d3 = PointDetector(CartesianIndex((360,)), 1, g.MaxTime)
 d4 = PointDetector(CartesianIndex((250,)), 1, g.MaxTime)
-detectors = [d2, d3, d4]
+detectors = [d1, d2, d3, d4]
 
 # 7. place sources 
 s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)

@@ -1,6 +1,6 @@
 using MaxwellFDTD
-using CairoMakie
-CairoMakie.activate!(type = "svg")
+using GLMakie
+GLMakie.activate!()
 using CPUTime
 using FFTW
 using ProgressBars
@@ -78,6 +78,7 @@ for timestep in ProgressBar(1:g.MaxTime)
         updateJbound!(MF, LF[m_idx], m, g)
         updatePbound!(MF, LF[m_idx], m, g)
     end
+    #updateJ!(MF)
 
     updateH!(F, g, c_grid)
 

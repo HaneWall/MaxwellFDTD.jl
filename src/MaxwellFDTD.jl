@@ -10,6 +10,7 @@ module MaxwellFDTD
     include("sources.jl")
     include("fft_utilities.jl")
     include("tunnelionisation_utilities.jl")
+    include("visuals.jl")
     
     export c_0, μ_0, ϵ_0, q_0, m_e
     export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!, intensity2amplitude, laserfluence
@@ -22,4 +23,5 @@ module MaxwellFDTD
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D
     export mytukey
     export Γ_ADK, ω_plasma
+    export slide_arr_over_time
 end
