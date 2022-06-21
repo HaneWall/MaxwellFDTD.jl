@@ -13,11 +13,11 @@ module MaxwellFDTD
     
     export c_0, μ_0, ϵ_0, q_0, m_e
     export GaussianPointSource, GaussianWavePointSource, SinusoidalPointSource, RickerPointSource, sourceE!, sourceH!, intensity2amplitude, laserfluence
-    export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!
+    export PointDetector, LineDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!, safeJ_tunnel!, safeJ_bound!, safeJ_free!
     export Fields1D, MaterialFields1D, LorentzFields1D, DrudeFields1D, TunnelFields1D
     export Grid1D, Grid2D, Grid3D
-    export GridCoefficients1D
-    export updateE!, updateH!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updateJfree!, updateJtunnel!
+    export GridCoefficients1D, FieldIonizationCoefficients1D
+    export updateE!, updateH!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updateJfree!, updateJtunnel!
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D
     export mytukey

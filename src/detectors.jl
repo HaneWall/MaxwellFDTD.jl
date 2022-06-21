@@ -8,9 +8,15 @@ struct PointDetector <: Detector
     Pz :: Vector{Float64}
     PzNl :: Vector{Float64}
     Jz :: Vector{Float64}
+    J_Tunnel :: Vector{Float64}
+    J_Bound :: Vector{Float64}
+    J_Free :: Vector{Float64}
     Γ_ADK :: Vector{Float64}
     function PointDetector(location::CartesianIndex, t_step_start::Int64, t_step_end::Int64)
         new(location, t_step_start, t_step_end, 
+            zeros(Float64, (t_step_end-t_step_start+1)),
+            zeros(Float64, (t_step_end-t_step_start+1)),
+            zeros(Float64, (t_step_end-t_step_start+1)),
             zeros(Float64, (t_step_end-t_step_start+1)),
             zeros(Float64, (t_step_end-t_step_start+1)),
             zeros(Float64, (t_step_end-t_step_start+1)),
@@ -41,6 +47,24 @@ end
 function safePNl!(D::PointDetector, MF::MaterialFields1D, timestep::Int64)
     if timestep >= D.t_step_start && timestep <= D.t_step_end
         D.PzNl[timestep-D.t_step_start+1] = MF.PzNl[D.location]
+    end
+end
+
+function safeJ_bound!(D::PointDetector, MF::MaterialFields1D, timestep::Int64)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.J_Bound[timestep-D.t_step_start+1] = MF.Jz_bound[D.location]
+    end
+end
+
+function safeJ_free!(D::PointDetector, MF::MaterialFields1D, timestep::Int64)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.J_Free[timestep-D.t_step_start+1] = MF.Jz_free[D.location]
+    end
+end
+
+function safeJ_tunnel!(D::PointDetector, MF::MaterialFields1D, timestep::Int64)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.J_Tunnel[timestep-D.t_step_start+1] = MF.Jz_tunnel[D.location]
     end
 end
 
@@ -82,6 +106,15 @@ function safeJ!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
     if timestep >= D.t_step_start && timestep <= D.t_step_end
         D.Jz[timestep-D.t_step_start+1, :] = MF.Jz[D.location]
     end
+end
+
+function safeJ_tunnel!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
+end
+
+function safeJ_bound!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
+end
+
+function safeJ_free!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
 end
 
 function safeΓ_ADK!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)

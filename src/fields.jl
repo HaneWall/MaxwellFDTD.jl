@@ -15,10 +15,18 @@ mutable struct MaterialFields1D <:Field
     Jz :: Vector{Float64}
     Pz :: Vector{Float64}
     PzNl :: Vector{Float64}
+
+    Jz_bound :: Vector{Float64}
+    Jz_free :: Vector{Float64}
+    Jz_tunnel :: Vector{Float64}
+
     ρ_cb :: Vector{Float64}
     Γ_ADK :: Vector{Float64}
     function MaterialFields1D(g::Grid1D)
         new(zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX),
+            zeros(Float64, g.SizeX),
             zeros(Float64, g.SizeX),
             zeros(Float64, g.SizeX),
             zeros(Float64, g.SizeX),

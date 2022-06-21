@@ -22,8 +22,15 @@ struct GridCoefficients1D <: Coeff
     end
 end
 
-struct FieldIonization1D <: Coeff
+mutable struct FieldIonizationCoefficients1D <: Coeff
     grid :: Grid1D
+    gamma_au :: Vector{Float64}
+    function FieldIonizationCoefficients1D(g::Grid1D)
+        new(
+            g, 
+            zeros(Float64, g.SizeX)
+        )
+    end
 end
 
 #=

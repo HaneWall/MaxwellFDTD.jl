@@ -3,16 +3,16 @@ using CPUTime
 using FFTW
 using GLMakie
 using ProgressBars
+using LaTeXStrings
 using DSP
 GLMakie.activate!()
-
 
 CPUtic()
 start = time()
 
 # 1. define grid
-SizeX = 500
-courant = 0.975
+SizeX = 400
+courant = 0.985
 Δx = 2e-9
 MaxTime = 2^18
 
@@ -27,29 +27,35 @@ t = g.Δt:g.Δt:g.Δt*MaxTime
 ω_0 = [2.75e16] # this might not work, use 2*π*/g.Δt instead (old varin paper/bachelor thesis)
 χ_1 = [1.1025]
 χ_2 = [0.]
-χ_3 = [0.]
+χ_3 = [2.2e-22]
 
 # drude parameters
 γ_plasma = 1e15
 
 # tunnel parameters
-E_gap = 9.
+E_gap = 7.5
 
 # source parameters
-λ = 800e-9
+λ = 2100e-9
 ω_central = 2 * π * c_0 / λ
 ppw = λ/Δx
-t_fwhm = 8e-15 # intensity FWHM
-amplitude = intensity2amplitude(12e16) # 12TWcm^-2
+t_fwhm = 140e-15 # intensity FWHM
+amplitude_pump = intensity2amplitude(12e16) # 12TWcm^-2
+
+λ_probe = 800e-9
+ω_probe= 2 * π * c_0 / λ_probe
+ppw_probe = λ_probe/Δx
+t_fwhm_probe = 45e-15 # intensity FWHM
+amplitude_probe = intensity2amplitude(1.5e14) 
 
 
 # 2. define fields that exist everywhere
 F = Fields1D(g)
 MF = MaterialFields1D(g)
 
-m1 = LorentzMedium1D(g, CartesianIndices((400:400,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium1D(g, CartesianIndices((400:400,)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium1D(g, CartesianIndices((400:400,)), E_gap, ρ_mol_density)
+m1 = LorentzMedium1D(g, CartesianIndices((200:300,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium1D(g, CartesianIndices((200:300,)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium1D(g, CartesianIndices((200:300,)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -57,6 +63,7 @@ tunnel_media =  [m3]
 
 # 4. define grid coefficients that respect ϵ_inf from the media 
 c_grid = GridCoefficients1D(g, bound_media)
+f_grid  = FieldIonizationCoefficients1D(g)
 
 # 5. define fields inside the media
 LF1 = LorentzFields1D(m1)
@@ -69,13 +76,14 @@ TF = [TF1]
 # 6. place detectors 
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 d2 = PointDetector(CartesianIndex((3,)), 1, g.MaxTime)
-d3 = PointDetector(CartesianIndex((460,)), 1, g.MaxTime)
-d4 = PointDetector(CartesianIndex((400,)), 1, g.MaxTime)
-detectors = [d1, d2, d3, d4]
+d3 = PointDetector(CartesianIndex((360,)), 1, g.MaxTime)
+d4 = PointDetector(CartesianIndex((250,)), 1, g.MaxTime)
+detectors = [d2, d3, d4]
 
 # 7. place sources 
-s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, 2*amplitude, 100000, t_fwhm, ppw)
-sources = [s0]
+s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)
+s1 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_probe, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
+sources = [s0, s1]
 
 # 8. place boundaries
 b1 = LeftSideMurABC(g, CartesianIndex((1,)))
@@ -85,7 +93,7 @@ boundaries = [b1, b2]
 for timestep in ProgressBar(1:g.MaxTime)
     
     for (m_idx, m) in enumerate(tunnel_media)
-        updatePlasma!(MF, TF[m_idx], F, m)
+        updatePlasma!(MF, TF[m_idx], f_grid, F, m)
         updateJtunnel!(MF, TF[m_idx], m)
     end
 
@@ -98,6 +106,8 @@ for timestep in ProgressBar(1:g.MaxTime)
         updateJbound!(MF, LF[m_idx], m, g)
         updatePbound!(MF, LF[m_idx], m, g)
     end
+
+    updateJ!(MF)
 
     updateH!(F, g, c_grid)
 
@@ -121,6 +131,9 @@ for timestep in ProgressBar(1:g.MaxTime)
 
     for d in detectors 
         safeΓ_ADK!(d, MF, timestep)
+        safeJ_tunnel!(d, MF, timestep)
+        safeJ_free!(d, MF, timestep)
+        safeJ_bound!(d, MF, timestep)
         safeE!(d, F, timestep)
         safeP!(d, MF, timestep)
         safeJ!(d, MF, timestep)
@@ -133,25 +146,28 @@ println("elapsed real time: ", round(time() - start; digits=3)," seconds")
 println("Computation Complete")
 
 
+
 function spectrum_plot()
     Δf = 1/g.Δt
     freqs = fftshift(fftfreq(MaxTime, Δf))
     harmonic_order = 2 * π * freqs./ω_central
-    spectrum_P = fftshift(fft(d4.Jz))
-    spectrum_E_reflect = fftshift(fft(d2.Ez))
-    spectrum_E_trans = fftshift(fft(d3.Ez))
 
-    broadness = Int(ceil(t_fwhm*13/g.Δt))
+    broadness = Int(ceil(5*t_fwhm/g.Δt))
     broad_idx_mean = ceil(broadness/2)
     signal_p_idx_max = argmax(abs.(d4.Jz))
     shift_p = Int(signal_p_idx_max - broad_idx_mean)
     window_p =  blackman(broadness; padding=length(t) - broadness)
     window_p = circshift(window_p, shift_p)
+    #window_p = 1.
 
-    spectrum_E_reflect_window = fftshift(fft(d2.Ez .* window_p))
+    spectrum_J_Tunnel = fftshift(fft(window_p .* d4.J_Tunnel))
+    spectrum_J_Bound = fftshift(fft(window_p .*d4.J_Bound))
+    spectrum_J_Free = fftshift(fft(window_p .*d4.J_Free))
+    spectrum_J = fftshift(fft(window_p .*d4.Jz))
+    spectrum_E_reflect = fftshift(fft(window_p .* d2.Ez))
+    spectrum_E_trans = fftshift(fft(window_p .*d3.Ez))
 
     f = Figure(resolution = (800, 800))
-    
     ax1 = Axis(f[1, 1],
                 title = "First Cell Medium", 
                 ylabel = L"$\log_{10}|F(P_z)|$", 
@@ -166,12 +182,19 @@ function spectrum_plot()
                 yticksize = 8, 
                 xlabelpadding = -8)
     
-    lines!(ax1, harmonic_order, log10.(abs.(spectrum_P)./maximum(abs.(spectrum_P))))
+    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Bound)./maximum(abs.(spectrum_J_Bound))))
+    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Tunnel)./maximum(abs.(spectrum_J_Tunnel))))
+    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Free)./maximum(abs.(spectrum_J_Free))))
+    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)))
     xlims!(ax1, 0, 15)
 
-    ax2 = Axis(f[1, 2],title = "Time Series P First Cell Medium", ylabel = L"J_z", xlabel = "t in ps")
-    lines!(ax2, t*10^15, d4.Jz./maximum(d4.Jz))
-    lines!(ax2, t*10^15, window_p)
+    ax2 = Axis(f[1, 2],title = "Time Series P First Cell Medium", ylabel = L"J_z", xlabel = "t in fs")
+    #lines!(ax2, t*10^15, (d4.J_Bound)./maximum(d4.J_Bound))
+    #lines!(ax2, t*10^15, (d4.J_Tunnel)./maximum(d4.J_Tunnel))
+    #lines!(ax2, t*10^15, (d4.J_Free)./maximum(d4.J_Free))
+    lines!(ax2, t*10^15, (d4.Jz)./maximum(d4.Jz))
+    
+    lines!(ax2, t*10^15, window_p, color=:black)
 
     ax3 = Axis(f[2, 1],
                 title = L"$E_{Reflection}$", 
@@ -186,8 +209,11 @@ function spectrum_plot()
                 ytickalign = 1, 
                 yticksize = 8, 
                 xlabelpadding = -8)
-    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect./MaxTime)))
-    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect_window./MaxTime)))
+    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect)./maximum(abs.(spectrum_E_reflect))))
+    #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Bound)./maximum(abs.(spectrum_J_Bound))))
+    #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Tunnel)./maximum(abs.(spectrum_J_Tunnel))))
+    #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Free)./maximum(abs.(spectrum_J_Free))))
+    lines!(ax3, harmonic_order, log10.(abs.(spectrum_J)./maximum(abs.(spectrum_J))))
     xlims!(ax3, 0, 15)
 
     ax4 = Axis(f[2, 2],title = "Time Series E Reflection", ylabel = L"E_z", xlabel = "t in ps")
@@ -232,9 +258,10 @@ function waterfall_plot(ts_min, ts_max)
 
     lines!(ax2, log10.(abs.(d2.Ez)), color=:black, linewidth=1.5)
     lines!(ax2, log10.(abs.(d3.Ez)), color=:red, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d4.Pz)), color=:green, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d4.Jz)), color=:yellow, linewidth=1.5)
-    lines!(ax2, log10.(abs.(d4.PzNl)), color=:blue, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.J_Free)), color=:green, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.J_Tunnel)), color=:yellow, linewidth=1.5)
+    lines!(ax2, log10.(abs.(d4.J_Bound)), color=:blue, linewidth=1.5)
+    lines!(ax2, log10.(d4.Γ_ADK), color=:gray90, linewidth=1.5)
     xlims!(ax2, 1740, g.MaxTime)
     f
 end
