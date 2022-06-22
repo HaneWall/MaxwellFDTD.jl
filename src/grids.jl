@@ -34,7 +34,7 @@ struct Grid3D <: Grid
     Δz :: Float64
     MaxTime :: Int64
     Δt :: Float64
-    function Grid3D(SizeX::Int64, SizeY::Int64, S_c::Float64, Δx::Float64, Δy::Float64, Δz::Float64, MaxTime::Int64)
-        new(SizeX, SizeY, S_c, Δx, Δy, Δz, MaxTime, S_c*Δx/c_0)
+    function Grid3D(SizeX::Int64, SizeY::Int64, SizeZ::Int64, S_c::Float64, Δx::Float64, Δy::Float64, Δz::Float64, MaxTime::Int64)
+        new(SizeX, SizeY, SizeZ, S_c, Δx, Δy, Δz, MaxTime, S_c*Δx/c_0)
     end
 end

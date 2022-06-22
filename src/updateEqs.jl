@@ -100,9 +100,9 @@ function updateH!(F::Fields3D, g::Grid3D, c::GridCoefficients3D)
             end;end;end
 
 
-    @inbounds for pp = 1:SizeZ-1
-        for nn = 1:SizeY
-            for mm = 1:SizeX-1
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 1:g.SizeY
+            for mm = 1:g.SizeX-1
                 F.Hy[mm,nn,pp] = (c.Chyh[mm,nn,pp] * F.Hy[mm,nn,pp] + 
                                 c.Chye[mm,nn,pp] * ((F.Ez[mm+1,nn,pp] - F.Ez[mm,nn,pp]) - (F.Ex[mm,nn,pp+1] - F.Ex[mm,nn,pp])))
             end;end;end
@@ -113,8 +113,6 @@ function updateH!(F::Fields3D, g::Grid3D, c::GridCoefficients3D)
                 F.Hz[mm,nn,pp] = (c.Chzh[mm,nn,pp] * F.Hz[mm,nn,pp] + 
                                 c.Chze[mm,nn,pp] * ((F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp]) - (F.Ey[mm+1,nn,pp] - F.Ey[mm,nn,pp])))
             end;end;end
-    
-    return Hx,Hy,Hz
 end
 
 function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D) 
@@ -139,8 +137,6 @@ function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D)
                 F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
                                 c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp]) - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])))
             end;end;end
-    
-    return Ex,Ey,Ez
 end
 
 #assumes cubic grid

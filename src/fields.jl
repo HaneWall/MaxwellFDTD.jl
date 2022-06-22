@@ -82,7 +82,7 @@ mutable struct Fields3D <: Field
     Ex :: Array{Float64, 3}
     Ey :: Array{Float64, 3}
     Ez :: Array{Float64, 3}
-    function Fields1D(g::Grid3D)
+    function Fields3D(g::Grid3D)
         new(zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 

@@ -119,3 +119,32 @@ function sourceH!(S::RickerPointSource, F::Fields1D, timestep::Int64)
         F.Hy[S.location - CartesianIndex((1,))] -= S.amplitude * (1.0-2.0 * arg^2) * exp(-(arg^2))/377.
     end
 end
+
+# 3-dimensional Sources
+
+
+struct RickerPointSource3D <: Source
+    grid:: Grid3D
+    location:: CartesianIndex
+    soft:: Bool
+    sf_left:: Bool
+    amplitude:: Float64
+    delay :: Int64
+    ppw:: Float64
+end
+
+function sourceE!(S::RickerPointSource3D, F::Fields3D, timestep::Int64)
+    arg = π * ((S.grid.S_c *(timestep - (S.delay +1)) - S.location[1] - S.location[2] - S.location[3]) / S.ppw -1)
+    if S.soft && timestep >= S.delay
+        F.Ez[S.location] += S.amplitude * (1.0-2.0 * arg^2) * exp(-(arg^2))
+    elseif timestep >= S.delay
+        F.Ez[S.location] = S.amplitude * (1.0-2.0 * arg^2) * exp(-(arg^2))
+    end
+end
+
+function sourceH!(S::RickerPointSource3D, F::Fields3D, timestep::Int64)
+    arg = π * ((S.grid.S_c *(timestep+1 - (S.delay +1)) - S.location[1] - S.location[2] - S.location[3] + 3) / S.ppw -1)
+    if S.soft && S.sf_left
+        F.Hy[S.location - CartesianIndex((1, 1, 1))] -= S.amplitude * (1.0-2.0 * arg^2) * exp(-(arg^2))/377.
+    end
+end
