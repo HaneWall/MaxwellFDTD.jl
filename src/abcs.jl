@@ -416,6 +416,8 @@ mutable struct PMLZhigh <: CPML
         σ_H = zeros(Float64, size(location)[1], size(location)[2], size(location)[3], 3)
         @. σ_H[:, :, 1:end-1, 3] = σ_H_profile[na, na, :]
         
+
+
         b_E = b_coeff(σ_E, g)
         c_E = c_coeff(b_E, σ_E)
         b_H = b_coeff(σ_H, g)
@@ -485,7 +487,7 @@ function update_ϕ_E!(PML::CPML, F::Fields3D)
     Hz = F.Hz[PML.location]
 
     @. PML.Ψ_Ex[:, 2:end, :, 2] += (Hz[:, 2:end, :] - Hz[:, 1:end-1, :]) * PML.c_E[:, 2:end, :, 2]
-    @. PML.Ψ_Ex[:, :, 2:end, 3] += (Ey[:, :, 2:end] - Hy[:, :, 1:end-1]) * PML.c_E[:, :, 2:end, 3]
+    @. PML.Ψ_Ex[:, :, 2:end, 3] += (Hy[:, :, 2:end] - Hy[:, :, 1:end-1]) * PML.c_E[:, :, 2:end, 3]
 
     @. PML.Ψ_Ey[:, :, 2:end, 3] += (Hx[:, :, 2:end] - Hx[:, :, 1:end-1]) * PML.c_E[:, :, 2:end, 3]
     @. PML.Ψ_Ey[2:end, :, :, 1] += (Hz[2:end, :, :] - Hz[1:end-1, :, :]) * PML.c_E[2:end, :, :, 1]
@@ -499,13 +501,13 @@ function update_ϕ_E!(PML::CPML, F::Fields3D)
 end
 
 function updateE!(F::Fields3D, g::Grid3D, PML::CPML)
-    @. F.Ex[PML.location] .+= g.Δt/g.Δx/ϵ_0 * PML.Φ_E[PML.location, 1]
-    @. F.Ey[PML.location] .+= g.Δt/g.Δx/ϵ_0 * PML.Φ_E[PML.location, 2]
-    @. F.Ez[PML.location] .+= g.Δt/g.Δx/ϵ_0 * PML.Φ_E[PML.location, 3]
+    @. F.Ex[PML.location] += g.Δt/g.Δx/ϵ_0 * PML.Φ_E[:, :, :, 1]
+    @. F.Ey[PML.location] += g.Δt/g.Δx/ϵ_0 * PML.Φ_E[:, :, :, 2]
+    @. F.Ez[PML.location] += g.Δt/g.Δx/ϵ_0 * PML.Φ_E[:, :, :, 3]
 end
 
 function updateH!(F::Fields3D, g::Grid3D, PML::CPML)
-    @. F.Hx[PML.location] .-= g.Δt/g.Δx/μ_0 * PML.Φ_H[PML.location, 1]
-    @. F.Hy[PML.location] .-= g.Δt/g.Δx/μ_0 * PML.Φ_H[PML.location, 2]
-    @. F.Hz[PML.location] .-= g.Δt/g.Δx/μ_0 * PML.Φ_H[PML.location, 3]
+    @. F.Hx[PML.location] -= g.Δt/g.Δx/μ_0 * PML.Φ_H[:, :, :, 1]
+    @. F.Hy[PML.location] -= g.Δt/g.Δx/μ_0 * PML.Φ_H[:, :, :, 2]
+    @. F.Hz[PML.location] -= g.Δt/g.Δx/μ_0 * PML.Φ_H[:, :, :, 3]
 end
