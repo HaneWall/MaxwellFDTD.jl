@@ -152,3 +152,75 @@ function safeE!(D::ZSliceDetector, F::Fields3D, timestep)
         D.Ez[timestep-D.t_step_start+1, :, :] = F.Ez[D.location]
     end
 end
+
+struct YSliceDetector <: Detector
+    location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
+    t_step_start :: Int64
+    t_step_end :: Int64
+    Ex :: Array{Float64, 3}
+    Ey :: Array{Float64, 3}
+    Ez :: Array{Float64, 3}
+    function YSliceDetector(location::CartesianIndices, t_step_start::Int64, t_step_end::Int64)
+        new(location, t_step_start, t_step_end, 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[3])
+            )
+    end
+end
+
+function safeE!(D::YSliceDetector, F::Fields3D, timestep)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.Ex[timestep-D.t_step_start+1, :, :] = F.Ex[D.location]
+        D.Ey[timestep-D.t_step_start+1, :, :] = F.Ey[D.location]
+        D.Ez[timestep-D.t_step_start+1, :, :] = F.Ez[D.location]
+    end
+end
+
+struct XSliceDetector <: Detector
+    location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
+    t_step_start :: Int64
+    t_step_end :: Int64
+    Ex :: Array{Float64, 3}
+    Ey :: Array{Float64, 3}
+    Ez :: Array{Float64, 3}
+    function XSliceDetector(location::CartesianIndices, t_step_start::Int64, t_step_end::Int64)
+        new(location, t_step_start, t_step_end, 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[2], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[2], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[2], size(location)[3])
+            )
+    end
+end
+
+function safeE!(D::XSliceDetector, F::Fields3D, timestep)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.Ex[timestep-D.t_step_start+1, :, :] = F.Ex[D.location]
+        D.Ey[timestep-D.t_step_start+1, :, :] = F.Ey[D.location]
+        D.Ez[timestep-D.t_step_start+1, :, :] = F.Ez[D.location]
+    end
+end
+
+struct BlockDetector <: Detector
+    location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
+    t_step_start :: Int64
+    t_step_end :: Int64
+    Ex :: Array{Float64, 4}
+    Ey :: Array{Float64, 4}
+    Ez :: Array{Float64, 4}
+    function BlockDetector(location::CartesianIndices, t_step_start::Int64, t_step_end::Int64)
+        new(location, t_step_start, t_step_end, 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2], size(location)[3]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2], size(location)[3])
+            )
+    end
+end
+
+function safeE!(D::BlockDetector, F::Fields3D, timestep)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.Ex[timestep-D.t_step_start+1, :, :, :] = F.Ex[D.location]
+        D.Ey[timestep-D.t_step_start+1, :, :, :] = F.Ey[D.location]
+        D.Ez[timestep-D.t_step_start+1, :, :, :] = F.Ez[D.location]
+    end
+end

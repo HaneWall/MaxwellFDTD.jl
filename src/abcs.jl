@@ -213,12 +213,13 @@ mutable struct PMLYlow <: CPML
     Φ_H :: Array{Float64, 4}
     function PMLYlow(g::Grid3D, location::CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}})
         σ_E_profile = σ_profile(Array(size(location)[2]-0.5:-1.:0.), size(location)[2]) 
+        print(σ_E_profile)
         σ_E = zeros(Float64, size(location)[1], size(location)[2], size(location)[3], 3)
         na = [CartesianIndex()]
         @. σ_E[:, :, :, 2] = σ_E_profile[na, :, na]
         
         σ_H_profile = σ_profile(Array(size(location)[2]-1.:-1.:1.), size(location)[2]) 
-        print(length(σ_H_profile))
+        print(σ_H_profile)
         σ_H = zeros(Float64, size(location)[1], size(location)[2], size(location)[3], 3)
         @. σ_H[:, 1:end-1, :, 2] = σ_H_profile[na, :, na]
         
@@ -280,10 +281,12 @@ mutable struct PMLYhigh <: CPML
     function PMLYhigh(g::Grid3D, location::CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}})
         σ_E_profile = σ_profile(Array(0.5:1.:size(location)[2]), size(location)[2]) 
         σ_E = zeros(Float64, size(location)[1], size(location)[2], size(location)[3], 3)
+        print(σ_E_profile)
         na = [CartesianIndex()]
         @. σ_E[:, :, :, 2] = σ_E_profile[na, :, na]
         
         σ_H_profile = σ_profile(Array(1.:1.:size(location)[2]-1), size(location)[2]) 
+        print(σ_H_profile)
         σ_H = zeros(Float64, size(location)[1], size(location)[2], size(location)[3], 3)
         @. σ_H[:, 1:end-1, :, 2] = σ_H_profile[na, :, na]
         
