@@ -79,6 +79,15 @@ function update_cb_population!(MF::MaterialFields1D, M::TunnelMedium1D)
     @. MF.ρ_cb[M.location] +=  MF.Γ_ADK[M.location] *  M.grid.Δt * (1 - MF.ρ_cb[M.location])
 end
 
+
+#=
+ WIP equations that will be used in the Future ()
+=#
+
+function update_ρ!(MF::TunnelFields1D, M::TunnelMedium1D)
+    @. MF.ρ_cb[M.location]  = (M.grid.Δt * Γ_ADK[M.location]) / (1 + M.grid.Δt/2 * Γ_ADK[M.location]) + (1 - M.grid.Δt/2 * Γ_ADK[M.location])/(1 + M.grid.Δt/2 * Γ_ADK[M.location]) * MF.ρ_cb[M.location]
+end
+
 #=
  These are the update equations in  the two-dimesional Case
 =#
@@ -136,6 +145,54 @@ function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D)
             for mm = 2:g.SizeX-1
                 F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
                                 c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp]) - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])))
+            end;end;end
+end
+
+function updateEWIP!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP) 
+
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 1:g.SizeX-1
+                F.Ex[mm,nn,pp] = (c.Cexe[mm,nn,pp] * F.Ex[mm,nn,pp] + 
+                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])/c.κ_E[mm,nn,pp,2] - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])/c.κ_E[mm,nn,pp,3]))
+            end;end;end
+
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 1:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ey[mm,nn,pp] = (c.Ceye[mm,nn,pp] * F.Ey[mm,nn,pp] + 
+                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])/c.κ_E[mm,nn,pp,3] - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])/c.κ_E[mm,nn,pp,1]))
+            end;end;end
+    
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
+                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])/c.κ_E[mm,nn,pp,1] - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])/c.κ_E[mm,nn,pp,2]))
+            end;end;end
+end
+
+function updateHWIP!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP)  
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 1:g.SizeY-1
+            for mm = 1:g.SizeX
+                F.Hx[mm,nn,pp] = (c.Chxh[mm,nn,pp] * F.Hx[mm,nn,pp] + 
+                                c.Chxe[mm,nn,pp] * ((F.Ey[mm,nn,pp+1] - F.Ey[mm,nn,pp])/c.κ_H[mm,nn,pp,3] - (F.Ez[mm,nn+1,pp] - F.Ez[mm,nn,pp])/c.κ_H[mm,nn,pp,2]))
+            end;end;end
+
+
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 1:g.SizeY
+            for mm = 1:g.SizeX-1
+                F.Hy[mm,nn,pp] = (c.Chyh[mm,nn,pp] * F.Hy[mm,nn,pp] + 
+                                c.Chye[mm,nn,pp] * ((F.Ez[mm+1,nn,pp] - F.Ez[mm,nn,pp])/c.κ_H[mm,nn,pp,1] - (F.Ex[mm,nn,pp+1] - F.Ex[mm,nn,pp])/c.κ_H[mm,nn,pp,3]))
+            end;end;end
+    
+    @inbounds for pp = 1:g.SizeZ
+        for nn = 1:g.SizeY-1
+            for mm = 1:g.SizeX-1
+                F.Hz[mm,nn,pp] = (c.Chzh[mm,nn,pp] * F.Hz[mm,nn,pp] + 
+                                c.Chze[mm,nn,pp] * ((F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])/c.κ_H[mm,nn,pp,2] - (F.Ey[mm+1,nn,pp] - F.Ey[mm,nn,pp])/c.κ_H[mm,nn,pp,1]))
             end;end;end
 end
 

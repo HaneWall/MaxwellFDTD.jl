@@ -76,3 +76,50 @@ struct GridCoefficients3D <: Coeff
         new(g, Chxh, Chxe, Chyh, Chye, Chzh, Chze, Cexh, Cexe, Ceyh, Ceye, Cezh, Ceze)
     end
 end
+
+# have to write new coefficients, that respect the κ_profile values (only the coefficients that are )
+
+struct GridCoefficients3D_WIP <: Coeff
+    grid :: Grid3D
+    Chxh :: Array{Float64, 3}
+    Chxe :: Array{Float64, 3}
+    Chyh :: Array{Float64, 3}
+    Chye :: Array{Float64, 3}
+    Chzh :: Array{Float64, 3}
+    Chze :: Array{Float64, 3}
+    Cexh :: Array{Float64, 3}
+    Cexe :: Array{Float64, 3}
+    Ceyh :: Array{Float64, 3}
+    Ceye :: Array{Float64, 3}
+    Cezh :: Array{Float64, 3}
+    Ceze :: Array{Float64, 3}
+    κ_E :: Array{Float64, 4}
+    κ_H :: Array{Float64, 4}
+    function GridCoefficients3D_WIP(g::Grid3D, m::Vector{T}, b::Vector) where T<:Medium
+        Chxh = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Chxe = fill(g.Δt/(μ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        Chyh = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Chye = fill(g.Δt/(μ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        Chzh = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Chze = fill(g.Δt/(μ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        Cexe = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Cexh = fill(g.Δt/(ϵ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        Ceye = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Ceyh = fill(g.Δt/(ϵ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        Ceze = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
+        Cezh = fill(g.Δt/(ϵ_0 * g.Δx),(g.SizeX, g.SizeY, g.SizeZ))
+        κ_E = fill(1., (g.SizeX, g.SizeY, g.SizeZ, 3))
+        κ_H = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ, 3))
+        for medium in m
+            Cexh[medium.location] .= Cexh[medium.location] ./ medium.ϵ_inf
+            Ceyh[medium.location] .= Ceyh[medium.location] ./ medium.ϵ_inf
+            Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
+        end
+        
+        for bound in b
+            κ_E[bound.location, :] .+= bound.κ_E .- 1. 
+            κ_H[bound.location, :] .+= bound.κ_H .- 1.
+        end
+        new(g, Chxh, Chxe, Chyh, Chye, Chzh, Chze, Cexh, Cexe, Ceyh, Ceye, Cezh, Ceze, κ_E, κ_H)
+    end
+end

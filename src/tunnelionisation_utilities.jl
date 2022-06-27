@@ -22,3 +22,7 @@ end
 function ω_plasma(ρ::Float64)
     return abs(q_0^2 * ρ / (ϵ_0*m_e))^(1/2)
 end
+
+function linear_predictor(arr_old::Array{Float64}, arr_current::Array{Float64})
+    return 3/2 .* arr_old .- 1/2 .* arr_current
+end

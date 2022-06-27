@@ -17,8 +17,8 @@ module MaxwellFDTD
     export Fields1D, MaterialFields1D, LorentzFields1D, DrudeFields1D, TunnelFields1D, Fields3D
     export PointDetector, LineDetector, ZSliceDetector, YSliceDetector, XSliceDetector, BlockDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!, safeJ_tunnel!, safeJ_bound!, safeJ_free!
     export Grid1D, Grid2D, Grid3D
-    export GridCoefficients1D, GridCoefficients3D, FieldIonizationCoefficients1D
-    export updateE!, updateH!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updateJfree!, updateJtunnel!
+    export GridCoefficients1D, GridCoefficients3D, GridCoefficients3D_WIP, FieldIonizationCoefficients1D
+    export updateE!, updateH!, updateEWIP!, updateHWIP!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updateJfree!, updateJtunnel!
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh, update_ϕ_E!, update_ϕ_H!, updateE!, updateH!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium3D
     export mytukey
