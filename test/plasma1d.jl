@@ -1,11 +1,11 @@
 using MaxwellFDTD
 using CPUTime
 using FFTW
-using GLMakie
+using CairoMakie
 using ProgressBars
 using LaTeXStrings
 using DSP
-GLMakie.activate!()
+CairoMakie.activate!(type="svg")
 
 CPUtic()
 start = time()
@@ -53,9 +53,9 @@ amplitude_probe = intensity2amplitude(1.5e14)
 F = Fields1D(g)
 MF = MaterialFields1D(g)
 
-m1 = LorentzMedium1D(g, CartesianIndices((200:300,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium1D(g, CartesianIndices((200:300,)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium1D(g, CartesianIndices((200:300,)), E_gap, ρ_mol_density)
+m1 = LorentzMedium1D(g, CartesianIndices((100:350,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium1D(g, CartesianIndices((100:350,)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium1D(g, CartesianIndices((100:350,)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -77,13 +77,13 @@ TF = [TF1]
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 d2 = PointDetector(CartesianIndex((3,)), 1, g.MaxTime)
 d3 = PointDetector(CartesianIndex((360,)), 1, g.MaxTime)
-d4 = PointDetector(CartesianIndex((250,)), 1, g.MaxTime)
+d4 = PointDetector(CartesianIndex((100,)), 1, g.MaxTime)
 detectors = [d1, d2, d3, d4]
 
 # 7. place sources 
 s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)
 s1 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_probe, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
-sources = [s0, s1]
+sources = [s0]
 
 # 8. place boundaries
 b1 = LeftSideMurABC(g, CartesianIndex((1,)))
@@ -152,7 +152,7 @@ function spectrum_plot()
     freqs = fftshift(fftfreq(MaxTime, Δf))
     harmonic_order = 2 * π * freqs./ω_central
 
-    broadness = Int(ceil(5*t_fwhm/g.Δt))
+    broadness = Int(ceil(6*t_fwhm/g.Δt))
     broad_idx_mean = ceil(broadness/2)
     signal_p_idx_max = argmax(abs.(d4.Jz))
     shift_p = Int(signal_p_idx_max - broad_idx_mean)
@@ -161,32 +161,38 @@ function spectrum_plot()
     #window_p = 1.
 
     spectrum_J_Tunnel = fftshift(fft(window_p .* d4.J_Tunnel))
-    spectrum_J_Bound = fftshift(fft(window_p .*d4.J_Bound))
-    spectrum_J_Free = fftshift(fft(window_p .*d4.J_Free))
-    spectrum_J = fftshift(fft(window_p .*d4.Jz))
+    spectrum_J_Bound = fftshift(fft(window_p .* d4.J_Bound))
+    spectrum_J_Free = fftshift(fft(window_p .* d4.J_Free))
+    spectrum_J = fftshift(fft(window_p .* d4.Jz))
     spectrum_E_reflect = fftshift(fft(window_p .* d2.Ez))
     spectrum_E_trans = fftshift(fft(window_p .*d3.Ez))
 
-    f = Figure(resolution = (800, 800))
+    f = Figure(resolution = (1300, 1300))
     ax1 = Axis(f[1, 1],
-                title = "First Cell Medium", 
-                ylabel = L"$\log_{10}|F(P_z)|$", 
-                xlabel = L"$\omega / \omega_{central}$", 
-                ylabelsize = 18, 
-                xlabelsize = 18, 
-                xgridstyle = :dash, 
-                ygridstyle = :dash, 
-                xtickalign = 1,
-                xticksize = 8, 
-                ytickalign = 1, 
-                yticksize = 8, 
-                xlabelpadding = -8)
+            title = "First Cell Medium", 
+            ylabel = L"$\log_{10}|F(P_z)|^2$", 
+            xlabel = L"$\frac{\omega}{\omega_{central}}$", 
+            ylabelsize = 18, 
+            xlabelsize = 18, 
+            xgridstyle = :dash, 
+            ygridstyle = :dash, 
+            xtickalign = 1,
+            xticksize = 8, 
+            ytickalign = 1, 
+            yticksize = 8, 
+            xlabelpadding = -8)
     
-    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Bound)./maximum(abs.(spectrum_J_Bound))))
-    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Tunnel)./maximum(abs.(spectrum_J_Tunnel))))
-    #lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Free)./maximum(abs.(spectrum_J_Free))))
-    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)))
+    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Bound).^2 ./maximum(abs.(spectrum_J).^2)), label =L"j_{Kerr}")
+    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Tunnel).^2 ./maximum(abs.(spectrum_J).^2)), label = L"j_{Inject}")
+    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J_Free).^2 ./maximum(abs.(spectrum_J).^2)), label = L"j_{Brunel}")
+    lines!(ax1, harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)),linestyle = :dash, label = L"j_{Ovr}")
+    # lines!(harmonic_order, log10.(abs.(spectrum_J_Bound).^2 ./maximum(abs.(spectrum_J).^2)))
+    # lines!(harmonic_order, log10.(abs.(spectrum_J_Tunnel).^2 ./maximum(abs.(spectrum_J).^2)))
+    # lines!(harmonic_order, log10.(abs.(spectrum_J_Free).^2 ./maximum(abs.(spectrum_J).^2)))
+    # lines!(harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)))
     xlims!(ax1, 0, 15)
+    ylims!(ax1, -20, 0)
+    axislegend(ax1, position=:lb, orientation=:horizontal)
 
     ax2 = Axis(f[1, 2],title = "Time Series P First Cell Medium", ylabel = L"J_z", xlabel = "t in fs")
     #lines!(ax2, t*10^15, (d4.J_Bound)./maximum(d4.J_Bound))
@@ -197,9 +203,9 @@ function spectrum_plot()
     lines!(ax2, t*10^15, window_p, color=:black)
 
     ax3 = Axis(f[2, 1],
-                title = L"$E_{Reflection}$", 
-                ylabel = L"$\log_{10}|F(E_z)|$", 
-                xlabel = L"$\omega / \omega_{central}$",  
+                title = L"Reflection", 
+                ylabel = L"$\log_{10}|F(E_z)|^2$", 
+                xlabel = L"$\frac{\omega}{\omega_{central}}$",  
                 ylabelsize = 18, 
                 xlabelsize = 18, 
                 xgridstyle = :dash, 
@@ -209,21 +215,23 @@ function spectrum_plot()
                 ytickalign = 1, 
                 yticksize = 8, 
                 xlabelpadding = -8)
-    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect)./maximum(abs.(spectrum_E_reflect))))
+    lines!(ax3, harmonic_order, log10.(abs.(spectrum_E_reflect).^2 ./maximum(abs.(spectrum_E_reflect).^2)), label=L"E_{Reflection}")
     #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Bound)./maximum(abs.(spectrum_J_Bound))))
     #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Tunnel)./maximum(abs.(spectrum_J_Tunnel))))
     #lines!(ax3, harmonic_order, log10.(abs.(spectrum_J_Free)./maximum(abs.(spectrum_J_Free))))
-    lines!(ax3, harmonic_order, log10.(abs.(spectrum_J)./maximum(abs.(spectrum_J))))
+    lines!(ax3, harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)), label=L"J_{Ovr}")
+    axislegend(ax3, position=:lb, orientation=:horizontal)
     xlims!(ax3, 0, 15)
+    ylims!(ax3, -20, 0)
 
-    ax4 = Axis(f[2, 2],title = "Time Series E Reflection", ylabel = L"E_z", xlabel = "t in ps")
+    ax4 = Axis(f[2, 2],title = "Time Series E Reflection", ylabel = L"E_z", xlabel = "t in fs")
     lines!(ax4, t*10^15, d2.Ez)
-    #lines!(ax4, t*10^12, d2.Ez.* window_p)
+    lines!(ax4, t*10^15, d2.Ez.* window_p, color=:black)
 
     ax5 = Axis(f[3, 1],
-                title = L"$E_{Transmission}$", 
-                ylabel = L"\log_{10}|F(E_z)|", 
-                xlabel = L"$\omega / \omega_{central}$", 
+                title = L"Transmission", 
+                ylabel = L"\log_{10}|F(E_z)|^2", 
+                xlabel = L"$\frac{\omega}{\omega_{central}}$", 
                 ylabelsize = 18, 
                 xlabelsize = 18, 
                 xgridstyle = :dash, 
@@ -234,10 +242,13 @@ function spectrum_plot()
                 yticksize = 8, 
                 xlabelpadding = -8)
 
-    lines!(ax5, harmonic_order, log10.(abs.(spectrum_E_trans./MaxTime)))
+    lines!(ax5, harmonic_order, log10.(abs.(spectrum_E_trans).^2 ./ maximum(abs.(spectrum_E_trans).^2)), label=L"E_{Transmission}")
+    lines!(ax5, harmonic_order, log10.(abs.(spectrum_J).^2 ./maximum(abs.(spectrum_J).^2)), label=L"J_{Ovr}")
+    axislegend(ax5, position=:lb, orientation=:horizontal)
     xlims!(ax5, 0, 15)
+    ylims!(ax5, -20, 0)
 
-    ax6 = Axis(f[3, 2],title = "Time Series E Transmission", ylabel = L"E_z", xlabel = "t in ps")
+    ax6 = Axis(f[3, 2],title = "Time Series E Transmission", ylabel = L"E_z", xlabel = "t in fs")
     lines!(ax6,t*10^15, d3.Ez)
     f
 end
