@@ -26,3 +26,13 @@ end
 function linear_predictor(arr_old::Array{Float64}, arr_current::Array{Float64})
     return 3/2 .* arr_old .- 1/2 .* arr_current
 end
+
+function multinomial_degen(m::Integer, n_pump::Integer, n_probe::Integer)
+    degeneracy = factorial(m)/(factorial(n_probe) * factorial((m + n_pump - n_probe)/2)* factorial((m - n_pump - n_probe)/2))
+    return degeneracy
+end
+
+function multinomial_degen(m::Float64, n_pump::Float64, n_probe::Float64)
+    degeneracy = gamma(m + 1)/(gamma(n_probe + 1) * gamma((m + n_pump - n_probe)/2 + 1)* gamma((m - n_pump - n_probe)/2 + 1))
+    return degeneracy
+end

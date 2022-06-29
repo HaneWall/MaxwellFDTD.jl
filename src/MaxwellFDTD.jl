@@ -22,6 +22,6 @@ module MaxwellFDTD
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh, update_ϕ_E!, update_ϕ_H!, updateE!, updateH!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium3D
     export mytukey
-    export Γ_ADK, ω_plasma
-    export slide_arr_over_time
+    export Γ_ADK, ω_plasma, linear_predictor, multinomial_degen
+    export slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum
 end

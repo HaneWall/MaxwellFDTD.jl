@@ -14,7 +14,7 @@ start = time()
 SizeX = 400
 courant = 0.985
 Δx = 2e-9
-MaxTime = 2^18
+MaxTime = 152178
 
 # 1. define grid
 g = Grid1D(SizeX, courant, Δx, MaxTime)
@@ -24,7 +24,7 @@ t = g.Δt:g.Δt:g.Δt*MaxTime
 ρ_mol_density = 2.2e28
 # bound electrons
 γ_lorentz = [0.]
-ω_0 = [2.75e16] # this might not work, use 2*π*/g.Δt instead (old varin paper/bachelor thesis)
+ω_0 = [2.75e16] # this might not work, use 2*π*/g.Δt instead (old varin paper/bachelor thesis) 2.75e16
 χ_1 = [1.1025]
 χ_2 = [0.]
 χ_3 = [2.2e-22]
@@ -53,9 +53,9 @@ amplitude_probe = intensity2amplitude(1.5e14)
 F = Fields1D(g)
 MF = MaterialFields1D(g)
 
-m1 = LorentzMedium1D(g, CartesianIndices((100:350,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium1D(g, CartesianIndices((100:350,)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium1D(g, CartesianIndices((100:350,)), E_gap, ρ_mol_density)
+m1 = LorentzMedium1D(g, CartesianIndices((100:100,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium1D(g, CartesianIndices((100:100,)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium1D(g, CartesianIndices((100:100,)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -83,7 +83,7 @@ detectors = [d1, d2, d3, d4]
 # 7. place sources 
 s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)
 s1 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_probe, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
-sources = [s0]
+sources = [s0, s1]
 
 # 8. place boundaries
 b1 = LeftSideMurABC(g, CartesianIndex((1,)))
@@ -167,7 +167,7 @@ function spectrum_plot()
     spectrum_E_reflect = fftshift(fft(window_p .* d2.Ez))
     spectrum_E_trans = fftshift(fft(window_p .*d3.Ez))
 
-    f = Figure(resolution = (1300, 1300))
+    f = Figure(resolution = (1300, 1300), font="CMU Serif")
     ax1 = Axis(f[1, 1],
             title = "First Cell Medium", 
             ylabel = L"$\log_{10}|F(P_z)|^2$", 

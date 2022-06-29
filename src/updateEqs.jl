@@ -22,7 +22,7 @@ function updateH!(F::Fields1D, g::Grid1D, c::GridCoefficients1D)
 end
 
 function updateJ!(MF::MaterialFields1D)
-    @. MF.Jz = MF.Jz_bound + MF.Jz_free + MF.Jz_tunnel
+    @inbounds MF.Jz .= MF.Jz_bound .+ MF.Jz_free .+ MF.Jz_tunnel
 end
 
 function updateJbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
@@ -31,7 +31,7 @@ function updateJbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedi
             LF.Jz[mm, osci] = (1.0-M.Γ[osci])/(1.0+M.Γ[osci])*LF.Jz[mm, osci] + (g.Δt*(M.ω_0[osci])^2)/(1.0+M.Γ[osci]) * (LF.PzNl[mm, osci] - LF.Pz[mm, osci]) 
         end
     end
-    MF.Jz_bound[M.location] .= sum(LF.Jz, dims=2)[:]
+    @inbounds MF.Jz_bound[M.location] .= sum(LF.Jz, dims=2)[:]
 end
 
 function updatePbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedium1D, g::Grid1D)
@@ -40,43 +40,52 @@ function updatePbound!(MF::MaterialFields1D, LF::LorentzFields1D, M::LorentzMedi
             LF.Pz[mm, osci] = LF.Pz[mm, osci] + g.Δt * (LF.Jz[mm, osci])
         end
     end
-    MF.Pz[M.location] .= sum(LF.Pz, dims=2)[:]
+    @inbounds MF.Pz[M.location] .= sum(LF.Pz, dims=2)[:]
 end
 
 function updatePNl!(MF::MaterialFields1D, LF::LorentzFields1D, F::Fields1D, M::LorentzMedium1D)
     @inbounds for osci in 1:M.oscillators
         @. LF.PzNl[:, osci] = ϵ_0 * (M.χ_1[osci]*F.Ez[M.location] + M.χ_2[osci] * F.Ez[M.location]^2 + M.χ_3[osci] * F.Ez[M.location]^3)
     end
-    MF.PzNl[M.location] .= sum(LF.PzNl, dims=2)[:]
+    @inbounds MF.PzNl[M.location] .= sum(LF.PzNl, dims=2)[:]
 end
 
 function updateJfree!(MF::MaterialFields1D, DF::DrudeFields1D, F::Fields1D, M::DrudeMedium1D)
-    @. DF.Jz_free[:] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:] + ϵ_0 * M.grid.Δt * ω_plasma(MF.ρ_cb[M.location] * M.ρ_mol_density)^2 * F.Ez[M.location]/(1 + M.Γ)
-    MF.Jz_free[M.location] .= DF.Jz_free
+    @inbounds begin
+        @. DF.Jz_free[:] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:] + ϵ_0 * M.grid.Δt * ω_plasma(MF.ρ_cb[M.location] * M.ρ_mol_density)^2 * F.Ez[M.location]/(1 + M.Γ)
+        MF.Jz_free[M.location] .= DF.Jz_free
+    end
 end
 
 function updateJtunnel!(MF::MaterialFields1D, TF::TunnelFields1D, M::TunnelMedium1D)
-    @. TF.Jz_tunnel[:] = q_0 * TF.dz_T[:]*(1 - MF.ρ_cb[M.location])*MF.Γ_ADK[M.location]
-    MF.Jz_tunnel[M.location] .= TF.Jz_tunnel
+    @inbounds begin 
+        @. TF.Jz_tunnel[:] = q_0 * TF.dz_T[:]*(1 - MF.ρ_cb[M.location])*MF.Γ_ADK[M.location]
+        MF.Jz_tunnel[M.location] .= TF.Jz_tunnel
+    end
 end
 
 function updatePlasma!(MF::MaterialFields1D, TF::TunnelFields1D, FC::FieldIonizationCoefficients1D, F::Fields1D, M::TunnelMedium1D)
     update_Γ_ADK!(MF, F, FC, M)
-    update_cb_population!(MF, M)
+    #update_cb_population!(MF, M)
+    update_ρ!(MF, M)
     update_displacement!(TF, F, M)
 end
 
 function update_Γ_ADK!(MF::MaterialFields1D, F::Fields1D, FC::FieldIonizationCoefficients1D, M::TunnelMedium1D)
-    MF.Γ_ADK[M.location] = Γ_ADK(F.Ez[M.location], FC.gamma_au[M.location], M.E_gap * q_0, 1, 0, 0)
+    @inbounds MF.Γ_ADK[M.location] = Γ_ADK(F.Ez[M.location], FC.gamma_au[M.location], M.E_gap * q_0, 1, 0, 0)
 end
 
 function update_displacement!(TF::TunnelFields1D, F::Fields1D, M::TunnelMedium1D)
-    @. TF.dz_T[:] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
+    @inbounds begin 
+        @. TF.dz_T[:] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
+    end
 end
 
 function update_cb_population!(MF::MaterialFields1D, M::TunnelMedium1D)
     # really simple Euler integration 
-    @. MF.ρ_cb[M.location] +=  MF.Γ_ADK[M.location] *  M.grid.Δt * (1 - MF.ρ_cb[M.location])
+    @inbounds begin 
+        @. MF.ρ_cb[M.location] +=  MF.Γ_ADK[M.location] *  M.grid.Δt * (1 - MF.ρ_cb[M.location])
+    end
 end
 
 
@@ -84,8 +93,10 @@ end
  WIP equations that will be used in the Future ()
 =#
 
-function update_ρ!(MF::TunnelFields1D, M::TunnelMedium1D)
-    @. MF.ρ_cb[M.location]  = (M.grid.Δt * Γ_ADK[M.location]) / (1 + M.grid.Δt/2 * Γ_ADK[M.location]) + (1 - M.grid.Δt/2 * Γ_ADK[M.location])/(1 + M.grid.Δt/2 * Γ_ADK[M.location]) * MF.ρ_cb[M.location]
+function update_ρ!(MF::MaterialFields1D, M::TunnelMedium1D)
+    @inbounds begin 
+        @. MF.ρ_cb[M.location]  = (M.grid.Δt * MF.Γ_ADK[M.location]) / (1 + M.grid.Δt/2 * MF.Γ_ADK[M.location]) + (1 - M.grid.Δt/2 * MF.Γ_ADK[M.location])/(1 + M.grid.Δt/2 *MF.Γ_ADK[M.location]) * MF.ρ_cb[M.location]
+    end
 end
 
 #=
