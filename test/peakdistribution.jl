@@ -63,11 +63,15 @@ A_pump = intensity2amplitude(I_pump)
 
 # Probe Pulse parameter
 λ_probe = 800e-9 
+ω_probe = 2 * π * c_0 / λ_probe
 ppw_probe = λ_probe/g.Δx
 I_probe = 0.005e16
 A_probe = intensity2amplitude(I_probe)
 τ_delay_probe = 500e-15
 τ_FWHM_probe = 75e-15
+
+#first harmonic 
+ω_1 = 2*ω_pump + ω_probe
 
 # Source init
 s1 = GaussianWavePointSource(g, CartesianIndex((4,)),true, true, false, A_pump, ceil(τ_delay_pump/g.Δt), τ_FWHM_pump, ppw_pump)
@@ -135,3 +139,4 @@ CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3)," seconds")
 println("Computation Complete")
 
+permutation_plot()

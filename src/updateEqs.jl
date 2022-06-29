@@ -183,6 +183,30 @@ function updateEWIP!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP)
             end;end;end
 end
 
+
+function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP2)
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 1:g.SizeX-1
+                F.Ex[mm,nn,pp] = (c.Cexe[mm,nn,pp] * F.Ex[mm,nn,pp] + 
+                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp]) - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])))
+            end;end;end
+
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 1:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ey[mm,nn,pp] = (c.Ceye[mm,nn,pp] * F.Ey[mm,nn,pp] + 
+                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1]) - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])))
+            end;end;end
+    
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
+                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp]) - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])))
+            end;end;end
+end
+
 function updateHWIP!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP)  
     @inbounds for pp = 1:g.SizeZ-1
         for nn = 1:g.SizeY-1
@@ -271,4 +295,188 @@ function updatePNl!(MF::MaterialFields3D, LF::LorentzFields3D, F::Fields3D, M::L
     MF.PxNl[M.location] .= sum(LF.PxNl, dims=4)[:]
     MF.PyNl[M.location] .= sum(LF.PyNl, dims=4)[:]
     MF.PzNl[M.location] .= sum(LF.PzNl, dims=4)[:]
+end
+
+function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_Parameters_3D)
+    
+    #X-Boundary
+    @inbounds for pp in 2:g.SizeZ-1
+        for nn in 1:g.SizeY-1
+            # X-Bot
+            for mm in 2:c.PML_Thickness[1]
+                PML.Ψ_Eyx[mm,nn,pp,1] = c.b_E_x[mm, 1] * PML.Ψ_Eyx[mm,nn,pp,1] + c.c_E_x[mm, 1] * 1/g.Δx *(F.Hz[mm-1,nn,pp] - F.Hz[mm,nn,pp])
+            end
+            # X-Top
+            m_rev = c.PML_Thickness[1]
+            for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+                PML.Ψ_Eyx[m_rev,nn,pp,2] = c.b_E_x[m_rev, 2] * PML.Ψ_Eyx[m_rev,nn,pp,2] + c.c_E_x[m_rev, 2] * 1/g.Δx * (F.Hz[mm-1,nn,pp] - F.Hz[mm,nn,pp])
+                m_rev = m_rev - 1
+            end
+    end;end
+
+    #@. PML.Ψ_Eyx[2:c.PML_Thickness[1], 1:end-1, 2:end-1, 1] = c.b_E_x[2:c.PML_Thickness[1], 1] * PML.Ψ_Eyx[2:c.PML_Thickness[1], 1:end-1, 2:end-1, 1] + c.b_E_x[2:c.PML_Thickness[1], 1] * 1/g.Δx *(F.Hz[1:c.PML_Thickness[1]-1, 1:end-1, 2:end-1] - F.Hz[2:c.PML_Thickness[1], 1:end-1, 2:end-1])
+    #@. PML.Ψ_Eyx[end:-1:begin+1, 1:end-1, 2:end-1, 2] = c.b_E_x[end:-1:begin+1, 2] * PML.Ψ_Eyx[end:-1:begin+1, 1:end-1, 2:end-1, 2] + c.b_E_x[end:-1:begin+1,2]* 1/g.Δx *(F.Hz[(g.SizeX-c.PML_Thickness[1]):g.SizeX-2, 1:end-1, 2:end-1] - F.Hz[(g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1, 1:end-1, 2:end-1])
+    
+
+    @inbounds for pp in 1:g.SizeZ-1
+        for nn in 2:g.SizeY-1
+            # X-Bot
+            for mm in 2:c.PML_Thickness[1]
+                PML.Ψ_Ezx[mm,nn,pp,1] = c.b_E_x[mm, 1] * PML.Ψ_Ezx[mm,nn,pp,1] + c.c_E_x[mm, 1] * 1/g.Δx *(F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])
+            end
+            # X-Top
+            m_rev = c.PML_Thickness[1]
+            for mm in (g.SizeX + 1 - c.PML_Thickness[1]):g.SizeX-1
+                PML.Ψ_Ezx[m_rev,nn,pp,2] = c.b_E_x[m_rev, 2] * PML.Ψ_Ezx[m_rev,nn,pp,2] + c.c_E_x[m_rev, 2] * 1/g.Δx *(F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])
+                m_rev = m_rev - 1  
+            end
+    end;end
+
+    #Y-Boundary 
+    @inbounds for pp in 2:g.SizeZ-1
+        for mm in 1:g.SizeX-1
+            # Y-Bot
+            for nn in 2:c.PML_Thickness[2]
+                PML.Ψ_Exy[mm,nn,pp,1] = c.b_E_y[nn, 1] * PML.Ψ_Exy[mm,nn,pp,1] + c.c_E_y[nn, 1] * 1/g.Δy *(F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])
+            end
+            # Y-Top
+            n_rev = c.PML_Thickness[2]
+            for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+                PML.Ψ_Exy[mm,n_rev,pp,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Exy[mm,n_rev,pp,2] + c.c_E_y[n_rev, 2] * 1/g.Δy * (F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])
+                n_rev = n_rev - 1
+            end
+    end;end
+
+    @inbounds for pp in 1:g.SizeZ-1
+        for mm in 2:g.SizeX-1
+            # Y-Bot
+            for nn in 2:c.PML_Thickness[2]
+                PML.Ψ_Ezy[mm,nn,pp,1] = c.b_E_y[nn, 1] * PML.Ψ_Ezy[mm,nn,pp,1] + c.c_E_y[nn, 1] * 1/g.Δy *(F.Hx[mm,nn-1,pp] - F.Hx[mm,nn,pp])
+            end
+            # Y-Top
+            n_rev = c.PML_Thickness[2]
+            for nn in (g.SizeY + 1 - c.PML_Thickness[2]):g.SizeY-1
+                PML.Ψ_Ezy[mm,n_rev,pp,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Ezy[mm,n_rev,pp,2] + c.c_E_y[n_rev, 2] * 1/g.Δy *(F.Hx[mm,nn-1,pp] - F.Hx[mm,nn,pp])
+                n_rev = n_rev - 1  
+            end
+    end;end
+
+    #Z-Boundary 
+    @inbounds for mm in 1:g.SizeX-1
+        for nn in 2:g.SizeY-1
+            # Z-Bot
+            for pp in 2:c.PML_Thickness[3]
+                PML.Ψ_Exz[mm,nn,pp,1] = c.b_E_z[pp, 1] * PML.Ψ_Exz[mm,nn,pp,1] + c.c_E_z[pp, 1] * 1/g.Δz *(F.Hy[mm,nn,pp - 1] - F.Hy[mm,nn,pp])
+            end
+            # Z-Top
+            p_rev = c.PML_Thickness[3]
+            for pp in (g.SizeZ+1-c.PML_Thickness[3]):g.SizeZ-1
+                PML.Ψ_Exz[mm,nn,p_rev,2] = c.b_E_z[p_rev, 2] * PML.Ψ_Exz[mm,nn,p_rev,2] + c.c_E_z[p_rev, 2] * 1/g.Δz * (F.Hy[mm,nn,pp-1] - F.Hy[mm,nn,pp])
+                p_rev = n_rev - 1
+            end
+    end;end
+
+    @inbounds for mm in 2:g.SizeX-1
+        for nn in 1:g.SizeY-1
+            # Z-Bot
+            for pp in 2:c.PML_Thickness[3]
+                PML.Ψ_Eyz[mm,nn,pp,1] = c.b_E_z[pp, 1] * PML.Ψ_Eyz[mm,nn,pp,1] + c.c_E_z[pp, 1] * 1/g.Δz *(F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])
+            end
+            # Z-Top
+            p_rev = c.PML_Thickness[3]
+            for pp in (g.SizeZ + 1 - c.PML_Thickness[3]):g.SizeZ-1
+                PML.Ψ_Eyz[mm,nn,p_rev, 2] = c.b_E_z[p_rev, 2] * PML.Ψ_Eyz[mm,nn,p_rev,2] + c.c_E_z[p_rev, 2] * 1/g.Δz *(F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])
+                p_rev = p_rev - 1  
+            end
+    end;end
+
+end
+
+function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_Parameters_3D)
+    #X-Boundary
+    @inbounds for pp in 1:g.SizeZ-1
+        for nn in 1:g.SizeY-1
+            # X-Bot
+            for mm in 1:c.PML_Thickness[1]-1
+                PML.Ψ_Hyx[mm,nn,pp,1] = c.b_H_x[mm,1] * PML.Ψ_Hyx[mm,nn,pp,1] + c.c_H_x[mm,1]*1/g.Δx*(F.Ez[mm+1,nn,pp] - F.Ez[mm,nn,pp])
+            end
+            # X-top
+            m_rev = c.PML_Thickness[1]-1
+            for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+                PML.Ψ_Hyx[m_rev,nn,pp,2] = c.b_H_x[m_rev,2] * PML.Ψ_Hyx[m_rev,nn,pp,2] + c.c_H_x[m_rev,2]*1/g.Δx*(F.Ez[mm+1,nn,pp] - F.Ez[mm,nn,pp])
+                m_rev = m_rev - 1
+            end
+    end;end
+
+    @inbounds for pp in 2:g.SizeZ-1
+        for nn in 1:g.SizeY-1
+            # X-Bot
+            for mm in 1:c.PML_Thickness[1]-1
+                PML.Ψ_Hzx[mm,nn,pp,1] = c.b_H_x[mm,1] * PML.Ψ_Hzx[mm,nn,pp,1] + c.c_H_x[mm, 1] * 1/g.Δx *(F.Ey[mm,nn,pp] - F.Ey[mm+1,nn,pp])
+            end
+            # X-Top
+            m_rev = c.PML_Thickness[1]-1
+            for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+                PML.Ψ_Hzx[m_rev,nn,pp,2] = c.b_H_x[m_rev, 2] * PML.Ψ_Hzx[m_rev,nn,pp,2] +c.c_H_x[m_rev, 2] * 1/g.Δx *(F.Ey[mm,nn,pp] - F.Ey[mm+1,nn,pp])
+                m_rev = m_rev - 1
+            end
+    end;end
+
+    #Y-Boundary
+    @inbounds for pp in 1:g.SizeZ-1
+        for mm in 1:g.SizeX-1
+            # Y-Bot
+            for nn in 1:c.PML_Thickness[2]-1
+                PML.Ψ_Hxy[mm,nn,pp,1] = c.b_H_y[nn,1] * PML.Ψ_Hxy[mm,nn,pp,1] + c.c_H_y[nn,1]*1/g.Δy*(F.Ez[mm,nn,pp] - F.Ez[mm,nn+1,pp])
+            end
+            # Y-top
+            n_rev = c.PML_Thickness[2]-1
+            for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+                PML.Ψ_Hxy[mm,n_rev,pp,2] = c.b_H_y[n_rev,2] * PML.Ψ_Hxy[mm,n_rev,pp,2] + c.c_H_y[n_rev,2]*1/g.Δy*(F.Ez[mm,nn,pp] - F.Ez[mm,nn+1,pp])
+                n_rev = n_rev - 1
+            end
+    end;end
+
+    @inbounds for pp in 2:g.SizeZ-1
+        for mm in 1:g.SizeX-1
+            # Y-Bot
+            for nn in 1:c.PML_Thickness[2]-1
+                PML.Ψ_Hzy[mm,nn,pp,1] = c.b_H_y[nn,1] * PML.Ψ_Hzy[mm,nn,pp,1] + c.c_H_y[nn, 1] * 1/g.Δy * (F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])
+            end
+            # Y-Top
+            n_rev = c.PML_Thickness[2]-1
+            for nn in (g.YizeX+1-c.PML_Thickness[2]):g.SizeY-1
+                PML.Ψ_Hzy[mm,n_rev,pp,2] = c.b_H_y[n_rev, 2] * PML.Ψ_Hzy[mm,n_rev,pp,2] +c.c_H_y[nn, 2] * 1/g.Δy * (F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])
+                n_rev = n_rev - 1
+            end
+    end;end
+
+    #Z-Boundary
+    @inbounds for mm in 1:g.SizeX-1
+        for nn in 1:g.SizeY-1
+            # Z-Bot
+            for pp in 1:c.PML_Thickness[3]-1
+                PML.Ψ_Hyz[mm,nn,pp,1] = c.b_H_z[pp,1] * PML.Ψ_Hyz[mm,nn,pp,1] + c.c_H_z[pp,1] * 1/g.Δz*(F.Ex[mm,nn,pp] - F.Ex[mm,nn,pp+1])
+            end
+            # Z-top
+            p_rev = c.PML_Thickness[3]-1
+            for pp in (g.SizeZ+1-c.PML_Thickness[3]):g.SizeZ-1
+                PML.Ψ_Hyz[mm,nn,p_rev,2] = c.b_H_z[p_rev,2] * PML.Ψ_Hyz[mm,nn,p_rev,2] + c.c_H_z[p_rev,2]*1/g.Δz*(F.Ex[mm,nn,pp] - F.Ex[mm,nn,pp+1])
+                p_rev = p_rev - 1
+            end
+    end;end
+
+    @inbounds for mm in 1:g.SizeX-1
+        for nn in 1:g.SizeY-1
+            # Z-Bot
+            for pp in 1:c.PML_Thickness[3]-1
+                PML.Ψ_Hxz[mm,nn,pp,1] = c.b_H_z[pp,1] * PML.Ψ_Hxz[mm,nn,pp,1] + c.c_H_z[pp, 1] * 1/g.Δz *(F.Ey[mm,nn,pp+1] - F.Ey[mm,nn,pp])
+            end
+            # Z-Top
+            p_rev = c.PML_Thickness[3]-1
+            for pp in (g.SizeZ+1-c.PML_Thickness[1]):g.SizeZ-1
+                PML.Ψ_Hxz[mm,nn,p_rev,2] = c.b_H_z[p_rev, 2] * PML.Ψ_Hzx[mm,nn,p_rev, 2] +c.c_H_z[p_rev, 2] * 1/g.Δz *(F.Ey[mm,nn,pp+1] - F.Ey[mm,nn,pp])
+                p_rev = p_rev - 1
+            end
+    end;end
 end

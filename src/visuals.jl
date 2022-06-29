@@ -147,3 +147,27 @@ function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Matrix, ω_centr
     ylims!(ax, ylims[1], ylims[2])
     save(name, fig)
 end
+
+function permutation_plot(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, ω_harm::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
+    fig = Figure(resolution = (800, 400), font = "CMU Serif")
+    ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")
+    L = length(t)
+    padded_L = nextpow(2, L)
+    center_help_L_low = floor(Int64, (padded_L - L)/2) 
+    center_help_L_high = floor(Int64, L + center_help_L_low - 1) 
+    δt = abs(t[2]-t[1])
+    δf = 1/δt
+    ω = 2*π*fftshift(fftfreq(padded_L, δf))./ω_central
+    idx_first_harm = argmin(abs.(ω - ω_harm))
+    window = blackman(L)
+    for idx in 1:size(signal)[2]
+        sigpad = zeros(eltype(signal[:,idx]), padded_L)
+        sigpad[center_help_L_low:center_help_L_high] = window.*signal[:, idx]
+        FT = fftshift(fft(sigpad))
+        lines!(ax, ω, log10.((abs.(FT)./padded_L).^2)./log10((abs.(FT[idx_first_harm])./padded_L).^2), label=L"%$(legend[idx])")
+    end
+    axislegend(ax, position=:rt, orientation=:horizontal)
+    xlims!(ax, xlims[1], xlims[2])
+    ylims!(ax, ylims[1], ylims[2])
+    save(name, fig)
+end
