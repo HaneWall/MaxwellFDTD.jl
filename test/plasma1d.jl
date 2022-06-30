@@ -11,10 +11,10 @@ CPUtic()
 start = time()
 
 # 1. define grid
-SizeX = 400
+SizeX = 5050
 courant = 0.985
 Δx = 2e-9
-MaxTime = 152178
+MaxTime = 150000
 
 # 1. define grid
 g = Grid1D(SizeX, courant, Δx, MaxTime)
@@ -53,9 +53,9 @@ amplitude_probe = intensity2amplitude(1.5e14)
 F = Fields1D(g)
 MF = MaterialFields1D(g)
 
-m1 = LorentzMedium1D(g, CartesianIndices((100:100,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium1D(g, CartesianIndices((100:100,)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium1D(g, CartesianIndices((100:100,)), E_gap, ρ_mol_density)
+m1 = LorentzMedium1D(g, CartesianIndices((100:5000,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium1D(g, CartesianIndices((100:5000,)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium1D(g, CartesianIndices((100:5000,)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -76,9 +76,9 @@ TF = [TF1]
 # 6. place detectors 
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 d2 = PointDetector(CartesianIndex((3,)), 1, g.MaxTime)
-d3 = PointDetector(CartesianIndex((360,)), 1, g.MaxTime)
+d3 = PointDetector(CartesianIndex((5005,)), 1, g.MaxTime)
 d4 = PointDetector(CartesianIndex((100,)), 1, g.MaxTime)
-detectors = [d1, d2, d3, d4]
+detectors =  [d2, d3, d4]
 
 # 7. place sources 
 s0 = GaussianWavePointSource(g, CartesianIndex((50,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)
@@ -130,14 +130,14 @@ for timestep in ProgressBar(1:g.MaxTime)
     end
 
     for d in detectors 
-        safeΓ_ADK!(d, MF, timestep)
-        safeJ_tunnel!(d, MF, timestep)
-        safeJ_free!(d, MF, timestep)
-        safeJ_bound!(d, MF, timestep)
+        #safeΓ_ADK!(d, MF, timestep)
+        #safeJ_tunnel!(d, MF, timestep)
+        #safeJ_free!(d, MF, timestep)
+        #safeJ_bound!(d, MF, timestep)
         safeE!(d, F, timestep)
-        safeP!(d, MF, timestep)
+        #safeP!(d, MF, timestep)
         safeJ!(d, MF, timestep)
-        safePNl!(d, MF, timestep)
+        #safePNl!(d, MF, timestep)
     end
 end
 
@@ -158,7 +158,7 @@ function spectrum_plot()
     shift_p = Int(signal_p_idx_max - broad_idx_mean)
     window_p =  blackman(broadness; padding=length(t) - broadness)
     window_p = circshift(window_p, shift_p)
-    #window_p = 1.
+    # window_p = 1.
 
     spectrum_J_Tunnel = fftshift(fft(window_p .* d4.J_Tunnel))
     spectrum_J_Bound = fftshift(fft(window_p .* d4.J_Bound))

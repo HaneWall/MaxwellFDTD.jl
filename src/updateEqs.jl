@@ -189,21 +189,45 @@ function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP2)
         for nn = 2:g.SizeY-1
             for mm = 1:g.SizeX-1
                 F.Ex[mm,nn,pp] = (c.Cexe[mm,nn,pp] * F.Ex[mm,nn,pp] + 
-                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp]) - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])))
+                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])*c.Den_Ey[nn] - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])*c.Den_Ez[pp]))
             end;end;end
 
     @inbounds for pp = 2:g.SizeZ-1
         for nn = 1:g.SizeY-1
             for mm = 2:g.SizeX-1
                 F.Ey[mm,nn,pp] = (c.Ceye[mm,nn,pp] * F.Ey[mm,nn,pp] + 
-                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1]) - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])))
+                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])*c.Den_Ez[pp] - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])*c.Den_Ex[mm]))
             end;end;end
     
     @inbounds for pp = 1:g.SizeZ-1
         for nn = 2:g.SizeY-1
             for mm = 2:g.SizeX-1
                 F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
-                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp]) - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])))
+                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])*c.Den_Ex[mm] - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])*c.Den_Ey[nn]))
+            end;end;end
+end
+
+function updateH!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_WIP2)  
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 1:g.SizeY-1
+            for mm = 1:g.SizeX
+                F.Hx[mm,nn,pp] = (c.Chxh[mm,nn,pp] * F.Hx[mm,nn,pp] + 
+                                c.Chxe[mm,nn,pp] * ((F.Ey[mm,nn,pp+1] - F.Ey[mm,nn,pp])*c.Den_Hz[pp] - (F.Ez[mm,nn+1,pp] - F.Ez[mm,nn,pp])*c.Den_Hy[nn]))
+            end;end;end
+
+
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 1:g.SizeY
+            for mm = 1:g.SizeX-1
+                F.Hy[mm,nn,pp] = (c.Chyh[mm,nn,pp] * F.Hy[mm,nn,pp] + 
+                                c.Chye[mm,nn,pp] * ((F.Ez[mm+1,nn,pp] - F.Ez[mm,nn,pp])*c.Den_Hx[mm] - (F.Ex[mm,nn,pp+1] - F.Ex[mm,nn,pp])*c.Den_Hz[pp]))
+            end;end;end
+    
+    @inbounds for pp = 1:g.SizeZ
+        for nn = 1:g.SizeY-1
+            for mm = 1:g.SizeX-1
+                F.Hz[mm,nn,pp] = (c.Chzh[mm,nn,pp] * F.Hz[mm,nn,pp] + 
+                                c.Chze[mm,nn,pp] * ((F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])*c.Den_Hy[nn] - (F.Ey[mm+1,nn,pp] - F.Ey[mm,nn,pp])*c.Den_Hx[mm]))
             end;end;end
 end
 
@@ -356,7 +380,7 @@ function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
             # Y-Top
             n_rev = c.PML_Thickness[2]
             for nn in (g.SizeY + 1 - c.PML_Thickness[2]):g.SizeY-1
-                PML.Ψ_Ezy[mm,n_rev,pp,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Ezy[mm,n_rev,pp,2] + c.c_E_y[n_rev, 2] * 1/g.Δy *(F.Hx[mm,nn-1,pp] - F.Hx[mm,nn,pp])
+                PML.Ψ_Ezy[mm,n_rev,pp,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Ezy[mm,n_rev,pp,2] + c.c_E_y[n_rev, 2] * 1/g.Δy * (F.Hx[mm,nn-1,pp] - F.Hx[mm,nn,pp])
                 n_rev = n_rev - 1  
             end
     end;end
@@ -372,7 +396,7 @@ function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
             p_rev = c.PML_Thickness[3]
             for pp in (g.SizeZ+1-c.PML_Thickness[3]):g.SizeZ-1
                 PML.Ψ_Exz[mm,nn,p_rev,2] = c.b_E_z[p_rev, 2] * PML.Ψ_Exz[mm,nn,p_rev,2] + c.c_E_z[p_rev, 2] * 1/g.Δz * (F.Hy[mm,nn,pp-1] - F.Hy[mm,nn,pp])
-                p_rev = n_rev - 1
+                p_rev = p_rev - 1
             end
     end;end
 
@@ -445,8 +469,8 @@ function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
             end
             # Y-Top
             n_rev = c.PML_Thickness[2]-1
-            for nn in (g.YizeX+1-c.PML_Thickness[2]):g.SizeY-1
-                PML.Ψ_Hzy[mm,n_rev,pp,2] = c.b_H_y[n_rev, 2] * PML.Ψ_Hzy[mm,n_rev,pp,2] +c.c_H_y[nn, 2] * 1/g.Δy * (F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])
+            for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+                PML.Ψ_Hzy[mm,n_rev,pp,2] = c.b_H_y[n_rev, 2] * PML.Ψ_Hzy[mm,n_rev,pp,2] +c.c_H_y[n_rev, 2] * 1/g.Δy * (F.Ex[mm,nn+1,pp] - F.Ex[mm,nn,pp])
                 n_rev = n_rev - 1
             end
     end;end
@@ -482,7 +506,8 @@ function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
 end
 
 function apply_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)
-    CB = g.Δt/ϵ_0 
+    CB = (g.Δt/ϵ_0)
+    CA = 1.
 
     @. F.Ex[1:g.SizeX-1, 2:c.PML_Thickness[2], 2:g.SizeZ-1] += CB * PML.Ψ_Exy[1:g.SizeX-1, 2:c.PML_Thickness[2], 2:g.SizeZ-1, 1]
     @. F.Ex[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 2:g.SizeZ-1] += CB * PML.Ψ_Exy[1:g.SizeX-1,(c.PML_Thickness[2]):-1:begin+1, 2:g.SizeZ-1, 2]
@@ -524,3 +549,4 @@ function apply_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Par
     @. F.Hz[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1, 1]
     @. F.Hz[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, (c.PML_Thickness[2]-1):-1:begin, 2:g.SizeZ-1, 2]
 end
+
