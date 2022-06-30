@@ -387,52 +387,75 @@ struct CPML_Parameters_3D
          denominator_E_z, denominator_H_z = [zeros(Float64, g.SizeZ-1) for _ in 1:2]
 
         ii_E = PML_Thickness[1]
-        ii_H = PML_Thickness[1] - 1
         @inbounds for mm in 1:g.SizeX-1
             if mm <= PML_Thickness[1]
                 denominator_E_x[mm] = 1/(κ_E_x[mm, 1] * g.Δx)
-                denominator_H_x[mm] = 1/(κ_H_x[mm, 1] * g.Δx) 
             elseif mm >= g.SizeX + 1 - PML_Thickness[1]
-                denominator_E_x[mm] = 1/(κ_E_x[ii_E, 2] * g.Δx)
-                denominator_H_x[mm] = 1/(κ_H_x[ii_H, 2] * g.Δx) 
+                denominator_E_x[mm] = 1/(κ_E_x[ii_E, 2] * g.Δx) 
                 ii_E = ii_E - 1
-                ii_H = ii_H - 1
             else 
                 denominator_E_x[mm] = 1/g.Δx
+            end   
+        end
+
+        ii_H = PML_Thickness[1] - 1
+        @inbounds for mm in 1:g.SizeX-1
+            if mm <= PML_Thickness[1]-1
+                denominator_H_x[mm] = 1/(κ_H_x[mm, 1] * g.Δx) 
+            elseif mm >= g.SizeX + 1 - PML_Thickness[1]
+                denominator_H_x[mm] = 1/(κ_H_x[ii_H, 2] * g.Δx) 
+                ii_H = ii_H - 1
+            else 
                 denominator_H_x[mm] = 1/g.Δx
             end   
         end
 
+
         jj_E = PML_Thickness[2]
-        jj_H = PML_Thickness[2] - 1
         @inbounds for mm in 1:g.SizeY-1
             if mm <= PML_Thickness[2]
                 denominator_E_y[mm] = 1/(κ_E_y[mm, 1] * g.Δy)
-                denominator_H_y[mm] = 1/(κ_H_y[mm, 1] * g.Δy) 
             elseif mm >= g.SizeY + 1 - PML_Thickness[2]
                 denominator_E_y[mm] = 1/(κ_E_y[jj_E, 2] * g.Δy)
-                denominator_H_y[mm] = 1/(κ_H_y[jj_H, 2] * g.Δy) 
                 jj_E = jj_E - 1
-                jj_H = jj_H - 1
             else 
                 denominator_E_y[mm] = 1/g.Δy
+            end   
+        end
+
+        jj_H = PML_Thickness[2] - 1
+        @inbounds for mm in 1:g.SizeY-1
+            if mm <= PML_Thickness[2] - 1 
+                denominator_H_y[mm] = 1/(κ_H_y[mm, 1] * g.Δy) 
+            elseif mm >= g.SizeY + 1 - PML_Thickness[2]
+                denominator_H_y[mm] = 1/(κ_H_y[jj_H, 2] * g.Δy) 
+                jj_H = jj_H - 1
+            else 
                 denominator_H_y[mm] = 1/g.Δy
             end   
         end
 
+
         kk_E = PML_Thickness[3]
-        kk_H = PML_Thickness[3] - 1 
         @inbounds for mm in 1:g.SizeZ-1
             if mm <= PML_Thickness[3]
                 denominator_E_z[mm] = 1/(κ_E_z[mm, 1] * g.Δz)
-                denominator_H_z[mm] = 1/(κ_H_z[mm, 1] * g.Δz) 
             elseif mm >= g.SizeZ + 1 - PML_Thickness[3]
                 denominator_E_z[mm] = 1/(κ_E_z[kk_E, 2] * g.Δz)
-                denominator_H_z[mm] = 1/(κ_H_z[kk_H, 2] * g.Δz) 
                 kk_E = kk_E - 1
-                kk_H = kk_H - 1
             else 
                 denominator_E_z[mm] = 1/g.Δz
+            end   
+        end
+
+        kk_H = PML_Thickness[3] - 1 
+        @inbounds for mm in 1:g.SizeZ-1
+            if mm <= PML_Thickness[3] - 1 
+                denominator_H_z[mm] = 1/(κ_H_z[mm, 1] * g.Δz) 
+            elseif mm >= g.SizeZ + 1 - PML_Thickness[3]
+                denominator_H_z[mm] = 1/(κ_H_z[kk_H, 2] * g.Δz) 
+                kk_H = kk_H - 1
+            else 
                 denominator_H_z[mm] = 1/g.Δz
             end   
         end

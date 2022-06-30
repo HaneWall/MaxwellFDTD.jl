@@ -17,7 +17,7 @@ const amplitude = 1.
 const ppw = 20.
 
 const Δx = Δy = Δz = 2e-9
-const MaxTime = 120
+const MaxTime = 280
 
 function ricker(t,location)
     src = 0
