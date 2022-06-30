@@ -17,8 +17,8 @@ module MaxwellFDTD
     export Fields1D, MaterialFields1D, LorentzFields1D, DrudeFields1D, TunnelFields1D, Fields3D
     export PointDetector, LineDetector, ZSliceDetector, YSliceDetector, XSliceDetector, BlockDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!, safeJ_tunnel!, safeJ_bound!, safeJ_free!
     export Grid1D, Grid2D, Grid3D
-    export CPML_Ψ_Fields_3D, CPML_Parameters_3D
-    export GridCoefficients1D, GridCoefficients3D, GridCoefficients3D_WIP, GridCoefficients3D_WIP2, FieldIonizationCoefficients1D
+    export CPML_Ψ_Fields_3D, CPML_Ψ_Fields_1D, CPML_Parameters_3D, CPML_Parameters_1D
+    export GridCoefficients1D, GridCoefficients3D,  GridCoefficients1D_w_CPML,  GridCoefficients3D_WIP, GridCoefficients3D_w_CPML, FieldIonizationCoefficients1D
     export updateE!, updateH!, updateEWIP!, updateHWIP!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updateJfree!, updateJtunnel!, update_Ψ_E!, update_Ψ_H!, apply_Ψ_E!, apply_Ψ_H!
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh, update_ϕ_E!, update_ϕ_H!, updateE!, updateH!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium3D

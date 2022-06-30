@@ -190,6 +190,29 @@ mutable struct CPML_Ψ_Fields_3D
 end
 
 
+mutable struct CPML_Ψ_Fields_1D
+    #=
+        the last dimension is necessary to prevent creating 2 Array for top and bottom PML (--> symmetrical PML)
+            example: Bottom: Ψ_Exy1 := Ψ_Exy[:, :, :, 1] , Top: Ψ_Exy2 := Ψ_Exy[:, :, :, 2]
+    =#
+    Ψ_Ezx :: Array{Float64, 2}
+    Ψ_Hyx :: Array{Float64, 2}
+
+    # inner constructor function:
+    function CPML_Ψ_Fields_1D(g::Grid1D, PML_Thickness::Vector{Int64})
+        
+        # x-Boundaries
+        Ψ_Ezx = zeros(Float64, PML_Thickness[1], 2)
+    
+        Ψ_Hyx = zeros(Float64, PML_Thickness[1] - 1, 2)
+        
+        new(
+            Ψ_Ezx, Ψ_Hyx
+            )
+    end
+end
+
+
 function σ_opt(m::Float64, Δx::Float64)
     return 0.8*(m-1)/(376.730 * Δx)
 end
@@ -202,7 +225,7 @@ function σ_profile(idx::Int64, thickness::Int64, Δx::Float64; m::Float64=4.0)
     return σ_opt(m, Δx) * (idx - 1 / (thickness - 1)).^m
 end
 
-function b_coeff(σ::Array{Float64}, κ_profile::Array{Float64}, α_profile::Array{Float64}, g::Grid3D)
+function b_coeff(σ::Array{Float64}, κ_profile::Array{Float64}, α_profile::Array{Float64}, g::T) where T<:Grid
     return exp.(-(σ./(ϵ_0 .* κ_profile) .+ α_profile./ϵ_0) .* g.Δt)
 end
 
@@ -503,6 +526,122 @@ struct CPML_Parameters_3D
             denominator_H_y, 
             denominator_E_z, 
             denominator_H_z 
+        )
+    end
+end
+
+struct CPML_Parameters_1D
+    # location_x_bot :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}) 
+    # location_x_top :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}})
+   
+    # location_y_bot :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}})
+    # location_y_top :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}})
+    
+    # location_z_bot :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}})
+    # location_z_top :: CartesianIndices(Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}})
+    PML_Thickness :: Vector{Int64}
+
+    α_E_x :: Array{Float64, 2}
+    κ_E_x :: Array{Float64, 2}
+    σ_E_x :: Array{Float64, 2}
+
+    b_E_x :: Array{Float64, 2}
+
+    c_E_x :: Array{Float64, 2}
+
+    α_H_x :: Array{Float64, 2}
+    κ_H_x :: Array{Float64, 2}
+    σ_H_x :: Array{Float64, 2}
+
+    b_H_x :: Array{Float64, 2}
+
+    c_H_x :: Array{Float64, 2}
+
+    denominator_E_x :: Array{Float64, 1}
+    denominator_H_x :: Array{Float64, 1}
+
+    # inner constructor
+    function CPML_Parameters_1D(g::Grid1D, PML_Thickness::Vector{Int64})
+        b_E_x, c_E_x, α_E_x, σ_E_x, κ_E_x = [zeros(Float64, PML_Thickness[1], 2) for _ in 1:5]
+        b_H_x, c_H_x, α_H_x, σ_H_x, κ_H_x = [zeros(Float64, PML_Thickness[1] - 1, 2) for _ in 1:5]
+
+        # Bot X
+        #arr_E_x = Array(1.:1.:PML_Thickness[1])
+        arr_E_x = Array(PML_Thickness[1]:-1.:1)
+        σ_E_x[:, 1] = σ_profile(arr_E_x, PML_Thickness[1], g.Δx)
+        α_E_x[:, 1] = α_profile(arr_E_x .- 1, PML_Thickness[1])
+        κ_E_x[:, 1] = κ_profile(arr_E_x, PML_Thickness[1])
+        b_E_x[:, 1] = b_coeff(σ_E_x[:, 1], κ_E_x[:, 1], α_E_x[:, 1], g)
+        c_E_x[2:end-1, 1] = c_coeff(b_E_x[2:end-1, 1], σ_E_x[2:end-1, 1], κ_E_x[2:end-1, 1], α_E_x[2:end-1, 1])
+
+        #arr_H_x = Array(0.5:1.:PML_Thickness[1]-1.5)
+        arr_H_x = Array(PML_Thickness[1]-1.5:-1.:0.5)
+        σ_H_x[:, 1] = σ_profile(arr_H_x, PML_Thickness[1], g.Δx)
+        α_H_x[:, 1] = α_profile(arr_H_x .- 1, PML_Thickness[1])
+        κ_H_x[:, 1] = κ_profile(arr_H_x, PML_Thickness[1])
+        b_H_x[:, 1] = b_coeff(σ_H_x[:, 1], κ_H_x[:, 1], α_H_x[:, 1], g)
+        c_H_x[:, 1] = c_coeff(b_H_x[:,1], σ_H_x[:,1], κ_H_x[:,1], α_H_x[:,1])
+
+        # Top X 
+        σ_E_x[:, 2] = σ_E_x[:, 1]
+        α_E_x[:, 2] = α_E_x[:, 1]
+        κ_E_x[:, 2] = κ_E_x[:, 1]
+        b_E_x[:, 2] = b_E_x[:, 1]
+        c_E_x[:, 2] = c_E_x[:, 1]
+
+        σ_H_x[:, 2] = σ_H_x[:, 1]
+        α_H_x[:, 2] = α_H_x[:, 1]
+        κ_H_x[:, 2] = κ_H_x[:, 1]
+        b_H_x[:, 2] = b_H_x[:, 1]
+        c_H_x[:, 2] = c_H_x[:, 1]
+
+
+         denominator_E_x, denominator_H_x = [zeros(Float64, g.SizeX-1) for _ in 1:2]
+
+        ii_E = PML_Thickness[1]
+        @inbounds for mm in 1:g.SizeX-1
+            if mm <= PML_Thickness[1]
+                denominator_E_x[mm] = 1/(κ_E_x[mm, 1] * g.Δx)
+            elseif mm >= g.SizeX + 1 - PML_Thickness[1]
+                denominator_E_x[mm] = 1/(κ_E_x[ii_E, 2] * g.Δx) 
+                ii_E = ii_E - 1
+            else 
+                denominator_E_x[mm] = 1/g.Δx
+            end   
+        end
+
+        ii_H = PML_Thickness[1] - 1
+        @inbounds for mm in 1:g.SizeX-1
+            if mm <= PML_Thickness[1]-1
+                denominator_H_x[mm] = 1/(κ_H_x[mm, 1] * g.Δx) 
+            elseif mm >= g.SizeX + 1 - PML_Thickness[1]
+                denominator_H_x[mm] = 1/(κ_H_x[ii_H, 2] * g.Δx) 
+                ii_H = ii_H - 1
+            else 
+                denominator_H_x[mm] = 1/g.Δx
+            end   
+        end
+
+
+        new(PML_Thickness,
+            α_E_x,
+            κ_E_x,
+            σ_E_x,
+
+            b_E_x,  
+
+            c_E_x,
+
+            α_H_x,
+            κ_H_x,
+            σ_H_x,
+
+            b_H_x,
+
+            c_H_x,
+
+            denominator_E_x, 
+            denominator_H_x, 
         )
     end
 end

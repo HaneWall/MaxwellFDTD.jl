@@ -124,7 +124,7 @@ struct GridCoefficients3D_WIP <: Coeff
     end
 end
 
-struct GridCoefficients3D_WIP2 <: Coeff
+struct GridCoefficients3D_w_CPML <: Coeff
     grid :: Grid3D
     Chxh :: Array{Float64, 3}
     Chxe :: Array{Float64, 3}
@@ -148,7 +148,7 @@ struct GridCoefficients3D_WIP2 <: Coeff
     Den_Hz :: Array{Float64, 1}
     Den_Ez :: Array{Float64, 1}
 
-    function GridCoefficients3D_WIP2(g::Grid3D, m::Vector{T}, c::CPML_Parameters_3D) where T<:Medium
+    function GridCoefficients3D_w_CPML(g::Grid3D, m::Vector{T}, c::CPML_Parameters_3D) where T<:Medium
         Chxh = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
         Chxe = fill(g.Δt/(μ_0),(g.SizeX, g.SizeY, g.SizeZ))
         Chyh = fill(1.0,(g.SizeX, g.SizeY, g.SizeZ))
@@ -178,5 +178,31 @@ struct GridCoefficients3D_WIP2 <: Coeff
         end
         
         new(g, Chxh, Chxe, Chyh, Chye, Chzh, Chze, Cexh, Cexe, Ceyh, Ceye, Cezh, Ceze, Den_Hx, Den_Ex, Den_Hy, Den_Ey, Den_Hz, Den_Ez)
+    end
+end
+
+struct GridCoefficients1D_w_CPML <: Coeff
+    grid :: Grid1D
+    Chyh :: Array{Float64, 1}
+    Chye :: Array{Float64, 1}
+    Cezh :: Array{Float64, 1}
+    Ceze :: Array{Float64, 1}
+
+    Den_Hx :: Array{Float64, 1}
+    Den_Ex :: Array{Float64, 1}
+
+    function GridCoefficients1D_w_CPML(g::Grid1D, m::Vector{T}, c::CPML_Parameters_1D) where T<:Medium
+        Chyh = fill(1.0,(g.SizeX))
+        Chye = fill(g.Δt/(μ_0),(g.SizeX))
+        Ceze = fill(1.0,(g.SizeX))
+        Cezh = fill(g.Δt/(ϵ_0),(g.SizeX))
+        for medium in m
+            Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
+        end
+
+        Den_Hx = c.denominator_H_x
+        Den_Ex = c.denominator_E_x
+
+        new(g, Chyh, Chye, Cezh, Ceze, Den_Hx, Den_Ex)
     end
 end

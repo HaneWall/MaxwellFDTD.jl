@@ -8,43 +8,44 @@ using CPUTime
 CPUtic()
 start = time()
 
-const SizeX = 48
-const SizeY = 48
-const SizeZ = 48
-const courant = 1.0/(sqrt(3.0))
+const SizeX = 800
+
 
 const amplitude = 1.
-const ppw = 20.
+const ppw = 50.
 
-const Δx = Δy = Δz = 2e-9
-const MaxTime = 280
+const Δx = 2e-9
+const MaxTime = 2640
+
+PML_Thickness = [200]
+courant = 0.95
 
 function ricker(t,location)
     src = 0
-    delay = 15
-    ppw = 20
+    delay = 100
+    ppw = 50
     if t > delay
         arg = π * ((1/sqrt(3.0) * (t - (delay+1)) - location) / ppw - 1)
-        src = 30*(1.0 - 2.0 * arg^2) * exp(-(arg^2))
+        src = (1.0 - 2.0 * arg^2) * exp(-(arg^2))
     end
     return src
 end
 
-PML_Thickness = [10, 10, 10]
 
-g = Grid3D(SizeX, SizeY, SizeZ, courant, Δx, Δy, Δz, MaxTime)
-F = Fields3D(g)
-F_PML = CPML_Ψ_Fields_3D(g, PML_Thickness)
-c_PML = CPML_Parameters_3D(g, PML_Thickness)
+g = Grid1D(SizeX, courant, Δx, MaxTime)
+F = Fields1D(g)
 
-const m_location = CartesianIndices((20:30, 20:30, 25:30))
-m = StaticMedium3D(g, m_location, 1.)
+F_PML = CPML_Ψ_Fields_1D(g, PML_Thickness)
+c_PML = CPML_Parameters_1D(g, PML_Thickness)
+
+const m_location = CartesianIndices((20:30,))
+m = StaticMedium1D(g, m_location, 1.)
 media = [m]
 
-c_grid = GridCoefficients3D_WIP2(g, media, c_PML)
+c_grid = GridCoefficients1D_w_CPML(g, media, c_PML)
 
-block_pos = CartesianIndices((1:SizeX,1:SizeY,1:SizeZ))
-d3 = BlockDetector(block_pos, 1, MaxTime)
+block_pos = CartesianIndices((1:SizeX,))
+d3 = LineDetector(block_pos, 1, MaxTime)
 detectors = [d3]
 
 for timestep in ProgressBar(1:g.MaxTime)
@@ -67,7 +68,7 @@ for timestep in ProgressBar(1:g.MaxTime)
     #     sourceE!(source, F, timestep)
     # end
 
-    F.Ez[24,24,24] += ricker(timestep, 0)
+    F.Ez[400] += ricker(timestep, 0)
 
     apply_Ψ_E!(F_PML, F, g, c_PML)
     
@@ -80,3 +81,4 @@ end
 CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3)," seconds")
 println("Computation Complete")
+
