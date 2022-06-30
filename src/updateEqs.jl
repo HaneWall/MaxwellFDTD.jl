@@ -297,7 +297,7 @@ function updatePNl!(MF::MaterialFields3D, LF::LorentzFields3D, F::Fields3D, M::L
     MF.PzNl[M.location] .= sum(LF.PzNl, dims=4)[:]
 end
 
-function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_Parameters_3D)
+function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)
     
     #X-Boundary
     @inbounds for pp in 2:g.SizeZ-1
@@ -392,7 +392,7 @@ function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_P
 
 end
 
-function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_Parameters_3D)
+function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)
     #X-Boundary
     @inbounds for pp in 1:g.SizeZ-1
         for nn in 1:g.SizeY-1
@@ -479,4 +479,30 @@ function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grids3D, c::CPML_P
                 p_rev = p_rev - 1
             end
     end;end
+end
+
+function apply_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D)
+
+end
+
+function apply_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)
+    DB = g.Δt/μ_0
+
+    @. F.Hx[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 1:g.SizeZ-1] += DB * PML.Ψ_Hxy[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 1:g.SizeZ-1, 1]
+    @. F.Hx[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 1:g.SizeZ-1] += DB * PML.Ψ_Hxy[1:g.SizeX-1,(c.PML_Thickness[2]-1):-1:begin,1:g.SizeZ-1, 2]
+    
+    @. F.Hx[1:g.SizeX-1, 1:g.SizeY-1, 1:c.PML_Thickness[3]-1] += DB * PML.Ψ_Hxz[1:g.SizeX, 1:g.SizeY, 1:(c.PML_Thickness[3]-1), 1]
+    @. F.Hx[1:g.SizeX-1, 1:g.SizeY-1, (g.SizeZ+1-c.PML_Thickness[3]):(g.SizeZ-1)] += DB * PML.Ψ_Hxz[1:g.SizeX, 1:g.SizeY,(c.PML_Thickness[3]-1):-1:begin, 2]
+
+    @. F.Hy[1:c.PML_Thickness[1]-1, 1:g.SizeY-1, 1:g.SizeZ-1] += DB * PML.Ψ_Hyx[1:PML_Thickness[1]-1, 1:g.SizeY-1, 1:g.SizeZ-1, 1]
+    @. F.Hy[(g.SizeX+1-c.PML_Thickness[1]):(g.SizeX-1), 1:g.SizeY-1, 1:g.SizeZ-1] += DB * PML.Ψ_Hyx[(c.PML_Thickness[1]-1):-1:begin,1:g.SizeY-1, 1:g.SizeZ-1, 2]
+
+    @. F.Hy[1:g.SizeX-1, 1:g.SizeY-1, 1:c.PML_Thickness[3]-1] += DB * PML.Ψ_Hyz[1:g.SizeX-1, 1:g.SizeY-1, 1:c.PML_Thickness[3]-1, 1]
+    @. F.Hy[1:g.SizeX-1, 1:g.SizeY-1, (g.SizeZ+1-c.PML_Thickness[3]):(g.SizeZ-1)] += DB * PML.Ψ_Hyz[1:g.SizeX-1, 1:g.SizeY-1, (c.PML_Thickness[3]-1):-1:begin, 2]
+
+    @. F.Hz[1:c.PML_Thickness[1]-1, 1:g.SizeY-1, 2:g.SizeZ-1] += DB * PML.Ψ_Hzx[1:c.PML_Thickness[1]-1, 1:g.SizeY-1, 2:g.SizeZ-1, 1]
+    @. F.Hz[(g.SizeX+1-c.PML_Thickness[1]):(g.SizeX-1), 1:g.SizeY-1, 2:g.SizeZ-1] += DB * PML.PML.Ψ_Hzx[(c.PML_Thickness[1]-1):-1:begin, 1:g.SizeY-1, 2:g.SizeZ-1, 2]
+
+    @. F.Hz[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1, 1]
+    @. F.Hz[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, (c.PML_Thickness[2]-1):-1:begin, 2:g.SizeZ-1, 2]
 end
