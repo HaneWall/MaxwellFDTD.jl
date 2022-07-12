@@ -23,7 +23,7 @@ end
 
 function updateE!(F::Fields1D, MF::MaterialFields1D, g::Grid1D, c::GridCoefficients1D_w_CPML)
     @inbounds for mm = 2:g.SizeX-1
-        F.Ez[mm] = c.Ceze[mm] * F.Ez[mm] + c.Cezh[mm] * c.Den_Ex[mm] * (F.Hy[mm] - F.Hy[mm-1] - g.Δx * MF.Jz[mm])
+        F.Ez[mm] = c.Ceze[mm] * F.Ez[mm] + c.Cezh[mm]  * (c.Den_Ex[mm] * (F.Hy[mm] - F.Hy[mm-1]) -  MF.Jz[mm])
     end
 end
 

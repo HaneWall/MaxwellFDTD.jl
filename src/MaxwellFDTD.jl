@@ -20,9 +20,9 @@ module MaxwellFDTD
     export CPML_Ψ_Fields_3D, CPML_Ψ_Fields_1D, CPML_Parameters_3D, CPML_Parameters_1D
     export GridCoefficients1D, GridCoefficients3D,  GridCoefficients1D_w_CPML,  GridCoefficients3D_WIP, GridCoefficients3D_w_CPML, FieldIonizationCoefficients1D
     export updateE!, updateH!, updateEWIP!, updateHWIP!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updatePlasmaTangent!, updateJfree!, updateJtunnel!, update_Ψ_E!, update_Ψ_H!, apply_Ψ_E!, apply_Ψ_H!
-    export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PMLXlow, PMLXhigh, PMLYlow, PMLYhigh, PMLZlow, PMLZhigh, update_ϕ_E!, update_ϕ_H!, updateE!, updateH!
+    export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium3D
     export mytukey
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m
-    export slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot
+    export slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot
 end

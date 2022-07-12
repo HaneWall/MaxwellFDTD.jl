@@ -1,6 +1,7 @@
 using FFTW
 using DSP
 using GLMakie
+using LaTeXStrings
 GLMakie.activate!()
 
 
@@ -92,6 +93,16 @@ function record_arr_over_time(arr::Array{Float64, 4}, filename::String)
     end
 end
 
+function timeseries_plot(arr::Array{Float64,1})
+    timesteps = length(arr)
+    fig = Figure(resolution = (800, 1200))
+    ax = Axis(fig[1, 1], title="timeseries")
+    lines!(ax, 1:1:timesteps, log10.(abs.(arr)./maximum(arr)))
+    fig
+end
+
+
+
 function plot_amplitude_spectrum(t::Array{Float64,1}, signal::Array{Float64,1})
     L = length(t)
     δt = abs(t[2]-t[1])
@@ -181,7 +192,7 @@ function plot_log10_amplitude_spectrum(t::Array{Float64,1}, signal::Matrix, padd
 end
 
 function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
-    fig = Figure(resolution = (800, 400), font = "CMU Serif")
+    fig = Figure(resolution = (400, 400), font = "CMU Serif")
     ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")
     L = length(t)
     padded_L = nextpow(2, L)
@@ -197,11 +208,39 @@ function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Matrix, ω_centr
         FT = fftshift(fft(sigpad))
         lines!(ax, ω, log10.((abs.(FT)./padded_L).^2), label=L"%$(legend[idx])")
     end
-    axislegend(ax, position=:rt, orientation=:horizontal)
+    axislegend(ax, position=:rt)
     xlims!(ax, xlims[1], xlims[2])
     ylims!(ax, ylims[1], ylims[2])
     save(name, fig)
 end
+
+function plot_log10_power_spectrum_current_and_E(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
+    fig = Figure(resolution = (400, 400), font = "CMU Serif")
+    ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")
+    L = length(t)
+    padded_L = nextpow(2, L)
+    center_help_L_low = floor(Int64, (padded_L - L)/2) 
+    center_help_L_high = floor(Int64, L + center_help_L_low - 1) 
+    δt = abs(t[2]-t[1])
+    δf = 1/δt
+    ω = 2*π*fftshift(fftfreq(padded_L, δf))./ω_central
+    window = blackman(L)
+    for idx in 1:size(signal)[2]
+        sigpad = zeros(eltype(signal[:,idx]), padded_L)
+        sigpad[center_help_L_low:center_help_L_high] = window.*signal[:, idx]
+        FT = fftshift(fft(sigpad))
+        if idx == 2
+            lines!(ax, ω, 9.3 .+ log10.(((abs.(ω .* FT)./padded_L).^2)), label=L"%$(legend[idx])")
+        else
+            lines!(ax, ω, log10.(((abs.(FT)./padded_L).^2)), label=L"%$(legend[idx])")
+        end
+    end
+    axislegend(ax, position=:rt)
+    xlims!(ax, xlims[1], xlims[2])
+    ylims!(ax, ylims[1], ylims[2])
+    save(name, fig)
+end
+
 
 function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Array{Float64,1}, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::String, padding::Bool, name::String)
     fig = Figure(resolution = (800, 400), font = "CMU Serif")
@@ -227,9 +266,10 @@ function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Array{Float64,1}
 end
 
 
-function plot_Reflection_spectrum(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
-    fig = Figure(resolution = (800, 400), font = "CMU Serif")
-    ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"|FFT(S(t)|^2")
+function plot_Reflection_spectrum(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::LaTeXString, padding::Bool, name::String)
+    fig = Figure(resolution = (800, 800), font = "CMU Serif")
+    ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"Ratio")
+    ax2 = Axis(fig[2, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"Ratio")
     L = length(t)
     padded_L = nextpow(2, L)
     center_help_L_low = floor(Int64, (padded_L - L)/2) 
@@ -238,23 +278,29 @@ function plot_Reflection_spectrum(t::Array{Float64,1}, signal::Matrix, ω_centra
     δf = 1/δt
     ω = 2*π*fftshift(fftfreq(padded_L, δf))./ω_central
     window = blackman(L)
-
+    idx_omega = argmin(abs.(ω .- 1)) - ceil(Int64,length(ω)/2)
+    idx_omega_set = [idx_omega + 2*i*idx_omega for i in 0:10] .+ ceil(Int64,length(ω)/2)
     sigpad_1 = zeros(eltype(signal[:, 1]), padded_L)
     sigpad_1[center_help_L_low:center_help_L_high] = window.*signal[:, 1]
     sigpad_2 = zeros(eltype(signal[:, 2]), padded_L)
     sigpad_2[center_help_L_low:center_help_L_high] = window.*signal[:, 2]
-
     FT_1 = fftshift(fft(sigpad_1[:]))
     FT_2 = fftshift(fft(sigpad_2[:]))
-    lines!(ax, ω, ((abs.(FT_1)./padded_L).^2)./((abs.(FT_2)./padded_L).^2), label=L"%$(legend)")
+    ratio = ((abs.(FT_1)./padded_L).^2)./((abs.(FT_2)./padded_L).^2)
+    scatter_refl = [ratio[idx] for idx in idx_omega_set]
+    lines!(ax, ω, ratio, label=L"%$(legend)")
+    vlines!(ax, [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21], color = :red, linestyle=:dash)
     axislegend(ax, position=:rt, orientation=:horizontal)
     xlims!(ax, xlims[1], xlims[2])
     ylims!(ax, ylims[1], ylims[2])
+    scatter!(ax2, [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21], scatter_refl, color=:red)
+    xlims!(ax2, xlims[1], xlims[2])
+    ylims!(ax2, 1.65, 2.1)
     save(name, fig)
 end
 
 function permutation_plot(t::Array{Float64,1}, E_gap::Float64, signal::Matrix, ω_central::Float64, ω_probe::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
-    fig = Figure(resolution = (800, 400), font = "CMU Serif")
+    fig = Figure(resolution = (400, 400), font = "CMU Serif")
     ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")
     L = length(t)
     padded_L = nextpow(2, L)
@@ -295,10 +341,10 @@ function permutation_plot(t::Array{Float64,1}, E_gap::Float64, signal::Matrix, �
             permutations_brunel[j] = multinomial_degen(m_brunel, n_pump_brunel[j], n_probe)
         end
 
-        scatter!(ax, n_pump_brunel .+ ω_probe/ω_central, log10.(permutations_brunel.^2 ./permutations_brunel[1]^2), color=:black, marker=:+)
-        scatter!(ax, n_pump_injection .+ ω_probe/ω_central, log10.(permutations_injection.^2 ./permutations_injection[1]^2), color=:red, marker=:+)
+        scatter!(ax, n_pump_brunel .+ ω_probe/ω_central, log10.(permutations_brunel.^2 ./permutations_brunel[1]^2), color=:black, marker=:+, label="Brunel-Bi")
+        scatter!(ax, n_pump_injection .+ ω_probe/ω_central, log10.(permutations_injection.^2 ./permutations_injection[1]^2), color=:red, marker=:+, label="Injection-Bi")
     end
-    axislegend(ax, position=:rt, orientation=:horizontal)
+    axislegend(ax, position=:rt)
     xlims!(ax, xlims[1], xlims[2])
     ylims!(ax, ylims[1], ylims[2])
     save(name, fig)

@@ -9,7 +9,7 @@ CPUtic()
 start = time()
 
 SizeX = 2000
-courant = 0.975
+courant = 0.995
 Δx = 4.e-9
 MaxTime = 30000
 
@@ -37,7 +37,7 @@ LF = [LF1]
 
 s0 = GaussianWavePointSource(g, CartesianIndex((400,)),true, true, false, 1., 8500, 20e-15, 266.)
 s1 = GaussianPointSource(CartesianIndex((400,)),true, true, false, 1., 90, 500.)
-sources = [s1]
+sources = [s0]
 
 d1 = LineDetector(CartesianIndices((1:g.SizeX,)), 1, g.MaxTime)
 detectors = [d1]
