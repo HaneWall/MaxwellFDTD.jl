@@ -21,7 +21,7 @@ const MaxTime = 240
 
 function ricker(t,location)
     src = 0
-    delay = 15
+    delay = 25
     ppw = 20
     if t > delay
         arg = π * ((1/sqrt(3.0) * (t - (delay+1)) - location) / ppw - 1)

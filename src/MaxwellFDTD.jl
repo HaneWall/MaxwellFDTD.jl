@@ -24,5 +24,5 @@ module MaxwellFDTD
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium3D
     export mytukey
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m
-    export slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot
+    export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot
 end

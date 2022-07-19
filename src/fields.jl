@@ -233,12 +233,13 @@ function c_coeff(b::Array{Float64}, σ::Array{Float64}, κ::Array{Float64}, α::
     return (b .- 1).*σ ./ (σ .* κ .+ α .* κ.^2)
 end
 
-function κ_profile(arr::Array{Float64, 1}, thickness::Int64; m::Float64=4.0, κ_max::Float64=14.0)
+function κ_profile(arr::Array{Float64, 1}, thickness::Int64; m::Float64=4.0, κ_max::Float64=14.)
     return 1 .+ (κ_max .-1).*((thickness .- arr)./(thickness - 1.)).^m
 end
 
 function α_profile(arr::Array{Float64, 1}, thickness::Int64; m_a::Float64=1.0)
-    return 0.25.* ((arr)./(thickness .- 1)).^m_a
+    #return 0.1
+    return 0.25*((arr)./(thickness .- 1)).^m_a
 end
 
 function α_profile(idx::Int64, thickness::Int64; m_a::Float64=1.0)
@@ -313,16 +314,16 @@ struct CPML_Parameters_3D
         b_H_z, c_H_z, α_H_z, σ_H_z, κ_H_z = [zeros(Float64, PML_Thickness[3] - 1, 2) for _ in 1:5]
 
         # Bot X
-        #arr_E_x = Array(1.:1.:PML_Thickness[1])
-        arr_E_x = Array(PML_Thickness[1]:-1.:1)
+        arr_E_x = Array(1.:1.:PML_Thickness[1])
+        #arr_E_x = Array(PML_Thickness[1]:-1.:1)
         σ_E_x[:, 1] = σ_profile(arr_E_x, PML_Thickness[1], g.Δx)
         α_E_x[:, 1] = α_profile(arr_E_x .- 1, PML_Thickness[1])
         κ_E_x[:, 1] = κ_profile(arr_E_x, PML_Thickness[1])
         b_E_x[:, 1] = b_coeff(σ_E_x[:, 1], κ_E_x[:, 1], α_E_x[:, 1], g)
         c_E_x[2:end-1, 1] = c_coeff(b_E_x[2:end-1, 1], σ_E_x[2:end-1, 1], κ_E_x[2:end-1, 1], α_E_x[2:end-1, 1])
 
-        #arr_H_x = Array(0.5:1.:PML_Thickness[1]-1.5)
-        arr_H_x = Array(PML_Thickness[1]-1.5:-1.:0.5)
+        arr_H_x = Array(0.5:1.:PML_Thickness[1]-1.5)
+        #arr_H_x = Array(PML_Thickness[1]-1.5:-1.:0.5)
         σ_H_x[:, 1] = σ_profile(arr_H_x, PML_Thickness[1], g.Δx)
         α_H_x[:, 1] = α_profile(arr_H_x .- 1, PML_Thickness[1])
         κ_H_x[:, 1] = κ_profile(arr_H_x, PML_Thickness[1])
@@ -343,8 +344,8 @@ struct CPML_Parameters_3D
         c_H_x[:, 2] = c_H_x[:, 1]
 
         # Bot Y 
-        #arr_E_y = Array(1.:1.:PML_Thickness[2])
-        arr_E_y = Array(PML_Thickness[2]:-1.:1)
+        arr_E_y = Array(1.:1.:PML_Thickness[2])
+        #arr_E_y = Array(PML_Thickness[2]:-1.:1)
 
         α_E_y[:, 1] = α_profile(arr_E_y .- 1, PML_Thickness[2])
         σ_E_y[:, 1] = σ_profile(arr_E_y, PML_Thickness[2], g.Δy)
@@ -352,8 +353,8 @@ struct CPML_Parameters_3D
         b_E_y[:, 1] = b_coeff(σ_E_y[:,1], κ_E_y[:,1], α_E_y[:,1], g)
         c_E_y[2:end-1, 1] = c_coeff(b_E_y[2:end-1,1], σ_E_y[2:end-1,1], κ_E_y[2:end-1,1], α_E_y[2:end-1,1])
 
-        #arr_H_y = Array(0.5:1.:PML_Thickness[1]-1.5)
-        arr_H_y = Array(PML_Thickness[2]-1.5:-1.:0.5)
+        arr_H_y = Array(0.5:1.:PML_Thickness[1]-1.5)
+        #arr_H_y = Array(PML_Thickness[2]-1.5:-1.:0.5)
 
         σ_H_y[:, 1] = σ_profile(arr_H_y, PML_Thickness[2], g.Δy)
         α_H_y[:, 1] = α_profile(arr_H_y .- 1, PML_Thickness[2])
@@ -375,8 +376,8 @@ struct CPML_Parameters_3D
         c_H_y[:, 2] = c_H_y[:, 1]
 
          # Bot Z
-         #arr_E_z = Array(1.:1.:PML_Thickness[3])
-         arr_E_z = Array(PML_Thickness[3]:-1.:1)
+         arr_E_z = Array(1.:1.:PML_Thickness[3])
+         #arr_E_z = Array(PML_Thickness[3]:-1.:1)
 
          α_E_z[:, 1] = α_profile(arr_E_z .- 1, PML_Thickness[3])
          σ_E_z[:, 1] = σ_profile(arr_E_z, PML_Thickness[3], g.Δz)
@@ -384,8 +385,8 @@ struct CPML_Parameters_3D
          b_E_z[:, 1] = b_coeff(σ_E_z[:, 1], κ_E_z[:, 1], α_E_z[:, 1], g)
          c_E_z[2:end-1, 1] = c_coeff(b_E_z[2:end-1, 1], σ_E_z[2:end-1, 1], κ_E_z[2:end-1, 1], α_E_z[2:end-1, 1])
  
-         #arr_H_z = Array(0.5:1.:PML_Thickness[3]-1.5)
-         arr_H_z = Array(PML_Thickness[3]-1.5:-1.:0.5)
+         arr_H_z = Array(0.5:1.:PML_Thickness[3]-1.5)
+         #arr_H_z = Array(PML_Thickness[3]-1.5:-1.:0.5)
  
          σ_H_z[:, 1] = σ_profile(arr_H_z, PML_Thickness[3], g.Δy)
          α_H_z[:, 1] = α_profile(arr_H_z .- 1, PML_Thickness[3])

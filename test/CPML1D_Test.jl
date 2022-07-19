@@ -18,11 +18,11 @@ const Δx = 2e-9
 const MaxTime = 2640
 
 PML_Thickness = [200]
-courant = 0.95
+courant = 0.99
 
 function ricker(t,location)
     src = 0
-    delay = 100
+    delay = 250
     ppw = 50
     if t > delay
         arg = π * ((1/sqrt(3.0) * (t - (delay+1)) - location) / ppw - 1)
