@@ -72,6 +72,17 @@ end
  These are the Fields in  the two-dimesional Case.
 =#
 
+mutable struct Fields2D <: Field
+    Hy :: Array{Float64, 2}
+    Hx :: Array{Float64, 2}
+    Ez :: Array{Float64, 2}
+    function Fields2D(g::Grid2D)
+        new(zeros(Float64, (g.SizeX, g.SizeY)),
+         zeros(Float64, (g.SizeX, g.SizeY)),
+         zeros(Float64, (g.SizeX, g.SizeY))
+         )
+    end
+end
 #=
  These are the Fields in  the three-dimesional Case.
 =#

@@ -11,6 +11,7 @@ struct Grid1D <: Grid
     end
 end
 
+# TM^z 2D-GRID
 struct Grid2D <: Grid
     SizeX :: Int64
     SizeY :: Int64

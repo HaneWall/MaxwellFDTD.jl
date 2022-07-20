@@ -127,8 +127,29 @@ end
  These are the update equations in  the two-dimesional Case
 =#
 
+function updateE!(F::Fields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)
+        @inbounds for nn = 2:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ez[mm,nn] = (c.Ceze[mm,nn] * F.Ez[mm,nn] + 
+                                c.Cezh[mm,nn] * ((F.Hy[mm,nn] - F.Hy[mm-1,nn])*c.Den_Ex[mm] - (F.Hx[mm,nn] - F.Hx[mm,nn-1])*c.Den_Ey[nn]))
+            end;end
+end
 
 
+function updateH!(F::Fields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)  
+    @inbounds for nn = 1:g.SizeY-1
+        for mm = 1:g.SizeX
+            F.Hx[mm,nn] = (c.Chxh[mm,nn] * F.Hx[mm,nn] + 
+                        c.Chxe[mm,nn] * ( - (F.Ez[mm,nn+1] - F.Ez[mm,nn])*c.Den_Hy[nn]))
+        end;end
+
+
+    @inbounds for nn = 1:g.SizeY
+        for mm = 1:g.SizeX-1
+            F.Hy[mm,nn] = (c.Chyh[mm,nn] * F.Hy[mm,nn] + 
+                            c.Chye[mm,nn] * ((F.Ez[mm+1,nn] - F.Ez[mm,nn])*c.Den_Hx[mm]))
+        end;end
+end
 
 #=
  These are the update equations in  the three-dimesional Case
