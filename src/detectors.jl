@@ -123,6 +123,25 @@ end
 function safePNl!(D::LineDetector, MF::MaterialFields1D, timestep::Int64)
 end
 
+# ------------------------------------------------------------------------------------------------
+# Detectors for 2D geometry
+# ------------------------------------------------------------------------------------------------
+struct PlaneDetector <: Detector
+    location :: CartesianIndices{2, Tuple{UnitRange{Int64}, UnitRange{Int64}}}
+    t_step_start :: Int64
+    t_step_end :: Int64
+    Hx :: Array{Float64, 3}
+    Hy :: Array{Float64, 3}
+    Ez :: Array{Float64, 3}
+    function PlaneDetector(location::CartesianIndices, t_step_start::Int64, t_step_end::Int64)
+        new(location, t_step_start, t_step_end, 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2]), 
+            zeros(Float64, t_step_end-t_step_start+1, size(location)[1], size(location)[2])
+            )
+    end
+end
+
 
 # ------------------------------------------------------------------------------------------------
 # Detectors for 3D geometry
@@ -217,10 +236,19 @@ struct BlockDetector <: Detector
     end
 end
 
+
 function safeE!(D::BlockDetector, F::Fields3D, timestep)
     if timestep >= D.t_step_start && timestep <= D.t_step_end
         D.Ex[timestep-D.t_step_start+1, :, :, :] = F.Ex[D.location]
         D.Ey[timestep-D.t_step_start+1, :, :, :] = F.Ey[D.location]
         D.Ez[timestep-D.t_step_start+1, :, :, :] = F.Ez[D.location]
+    end
+end
+
+function safeE!(D::PlaneDetector, F::Fields2D, timestep)
+    if timestep >= D.t_step_start && timestep <= D.t_step_end
+        D.Hx[timestep-D.t_step_start+1, :, :] = F.Hx[D.location]
+        D.Hy[timestep-D.t_step_start+1, :, :] = F.Hy[D.location]
+        D.Ez[timestep-D.t_step_start+1, :, :] = F.Ez[D.location]
     end
 end

@@ -46,7 +46,11 @@ end
 #=
  These are the medias in  the two-dimesional Case.
 =#
-
+struct StaticMedium2D <: Medium
+    grid :: Grid2D
+    location :: CartesianIndices{2, Tuple{ UnitRange{Int64}, UnitRange{Int64}}}
+    ϵ_inf :: Float64
+end
 #=
  These are the medias in  the three-dimesional Case.
 =#

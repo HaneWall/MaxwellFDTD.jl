@@ -66,7 +66,6 @@ struct GridCoefficients2D_w_CPML <: Coeff
         Den_Ey = c.denominator_E_y
 
         for medium in m
-            Cexh[medium.location] .= Cexh[medium.location] ./ medium.ϵ_inf
             Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
         end
         
