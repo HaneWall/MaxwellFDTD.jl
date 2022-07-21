@@ -73,6 +73,17 @@ struct GridCoefficients2D_w_CPML <: Coeff
     end
 end
 
+mutable struct FieldIonizationCoefficients2D <: Coeff
+    grid :: Grid2D
+    gamma_au :: Array{Float64, 2}
+    function FieldIonizationCoefficients2D(g::Grid2D)
+        new(
+            g, 
+            zeros(Float64, g.SizeX, g.SizeY)
+        )
+    end
+end
+
 #=
  These are the coefficients in the three-dimensional Case.
 =#

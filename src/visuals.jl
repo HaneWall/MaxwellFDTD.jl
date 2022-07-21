@@ -35,13 +35,21 @@ end
 
 function slide_arr_over_time(arr::Array{Float64, 3})
     # norm_array 
-    n_arr = arr./maximum(arr)
+    n_arr = arr
     t_index = Observable(1)
-    t_slice = @lift(n_arr[$t_index, :, :])
+    t_slice = @lift(abs.(n_arr[$t_index, :, :]))
     f = Figure()
+    int_sl = IntervalSlider(
+            f[3, 1],
+            range = LinRange(0:0.01:maximum(arr)),
+            startvalues = (0, maximum(arr)),
+            halign = :center,
+            linewidth = 10.0
+            )
     x = 1:1:size(arr, 2)
     y = 1:1:size(arr, 3)
-    heatmap(f[1,1], x, y, t_slice, colormap=:turbo)
+    heatmap(f[1,1], x, y, t_slice, colormap=:turbo, colorrange=int_sl.interval)
+    Colorbar(f[2, 1], colormap = :turbo, limits=int_sl.interval, vertical = false)
     sl = Slider(f[1, 2], horizontal = false, range = 1:size(arr, 1))
     connect!(t_index, sl.value)
     f

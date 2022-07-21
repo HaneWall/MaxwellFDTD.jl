@@ -135,6 +135,13 @@ function updateE!(F::Fields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)
             end;end
 end
 
+function updateE!(F::Fields2D, MF::MaterialFields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)
+    @inbounds for nn = 2:g.SizeY-1
+        for mm = 2:g.SizeX-1
+            F.Ez[mm,nn] = (c.Ceze[mm,nn] * F.Ez[mm,nn] + 
+                            c.Cezh[mm,nn] * ((F.Hy[mm,nn] - F.Hy[mm-1,nn])*c.Den_Ex[mm] - (F.Hx[mm,nn] - F.Hx[mm,nn-1])*c.Den_Ey[nn] - MF.Jz[mm,nn]))
+        end;end
+end
 
 function updateH!(F::Fields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)  
     @inbounds for nn = 1:g.SizeY-1
@@ -149,6 +156,80 @@ function updateH!(F::Fields2D, g::Grid2D, c::GridCoefficients2D_w_CPML)
             F.Hy[mm,nn] = (c.Chyh[mm,nn] * F.Hy[mm,nn] + 
                             c.Chye[mm,nn] * ((F.Ez[mm+1,nn] - F.Ez[mm,nn])*c.Den_Hx[mm]))
         end;end
+end
+
+function update_ρ!(MF::MaterialFields2D, M::TunnelMedium2D)
+    @inbounds begin 
+        @. MF.ρ_cb[M.location]  = (M.grid.Δt * MF.Γ_ADK[M.location]) / (1 + M.grid.Δt/2 * MF.Γ_ADK[M.location]) + (1 - M.grid.Δt/2 * MF.Γ_ADK[M.location])/(1 + M.grid.Δt/2 *MF.Γ_ADK[M.location]) * MF.ρ_cb[M.location]
+    end
+end
+
+function update_Γ_ADK!(MF::MaterialFields2D, F::Fields2D, FC::FieldIonizationCoefficients2D, M::TunnelMedium2D)
+    @inbounds MF.Γ_ADK[M.location] = Γ_ADK(F.Ez[M.location], FC.gamma_au[M.location], M.E_gap * q_0, 1, 0, 0)
+end
+
+function update_Γ_Tangent!(MF::MaterialFields2D, F::Fields2D, FC::FieldIonizationCoefficients2D, M::TunnelMedium2D, a::Float64, Γ̂::Float64, Ê::Float64)
+    @inbounds MF.Γ_ADK[M.location] = Γ_Tangent(F.Ez[M.location], FC.gamma_au[M.location], a, Γ̂, Ê)
+end
+
+function update_displacement!(TF::TunnelFields2D, F::Fields2D, M::TunnelMedium2D)
+    @inbounds begin 
+        @. TF.dz_T[:] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
+    end
+end
+
+function updateJ!(MF::MaterialFields2D)
+    @inbounds MF.Jz .= MF.Jz_bound .+ MF.Jz_free .+ MF.Jz_tunnel
+end
+
+function updateJbound!(MF::MaterialFields2D, LF::LorentzFields2D, M::LorentzMedium2D, g::Grid2D)
+    @inbounds for osci in 1:M.oscillators
+        for nn in 1:size(M.location)[2]
+            for mm in 1:size(M.location)[1]
+                LF.Jz[mm, nn, osci] = (1.0-M.Γ[osci])/(1.0+M.Γ[osci])*LF.Jz[mm, osci] + (g.Δt*(M.ω_0[osci])^2)/(1.0+M.Γ[osci]) * (LF.PzNl[mm, osci] - LF.Pz[mm, osci]) 
+            end
+        end
+    end
+    @inbounds MF.Jz_bound[M.location] .= sum(LF.Jz, dims=3)
+end
+
+function updatePbound!(MF::MaterialFields2D, LF::LorentzFields2D, M::LorentzMedium2D, g::Grid2D)
+    @inbounds for osci in 1:M.oscillators
+        for nn in 1:size(M.location)[2]
+            for mm in 1:size(M.location)[1]
+                LF.Pz[mm, nn, osci] = LF.Pz[mm, nn, osci] + g.Δt * (LF.Jz[mm, nn, osci])
+            end
+        end
+    end
+    @inbounds MF.Pz[M.location] .= sum(LF.Pz, dims=3)
+end
+
+function updatePNl!(MF::MaterialFields2D, LF::LorentzFields2D, F::Fields2D, M::LorentzMedium2D)
+    @inbounds for osci in 1:M.oscillators
+        @. LF.PzNl[:, :, osci] = ϵ_0 * (M.χ_1[osci]*F.Ez[M.location] + M.χ_2[osci] * F.Ez[M.location]^2 + M.χ_3[osci] * F.Ez[M.location]^3)
+    end
+    @inbounds MF.PzNl[M.location] .= sum(LF.PzNl, dims=3)
+end
+
+function updateJfree!(MF::MaterialFields2D, DF::DrudeFields2D, F::Fields2D, M::DrudeMedium2D)
+    @inbounds begin
+        @. DF.Jz_free[:, :] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:, :] + ϵ_0 * M.grid.Δt * ω_plasma(MF.ρ_cb[M.location] * M.ρ_mol_density)^2 * F.Ez[M.location]/(1 + M.Γ)
+        MF.Jz_free[M.location] .= DF.Jz_free
+    end
+end
+
+function updateJtunnel!(MF::MaterialFields2D, TF::TunnelFields2D, M::TunnelMedium2D)
+    @inbounds begin 
+        @. TF.Jz_tunnel[:, :] = q_0 * TF.dz_T[:, :]*(1 - MF.ρ_cb[M.location])*MF.Γ_ADK[M.location]
+        MF.Jz_tunnel[M.location] .= TF.Jz_tunnel
+    end
+end
+
+function updatePlasma!(MF::MaterialFields2D, TF::TunnelFields2D, FC::FieldIonizationCoefficients2D, F::Fields2D, M::TunnelMedium2D)
+    update_Γ_ADK!(MF, F, FC, M)
+    #update_cb_population!(MF, M)
+    update_ρ!(MF, M)
+    update_displacement!(TF, F, M)
 end
 
 #=

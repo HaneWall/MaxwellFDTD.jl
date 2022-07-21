@@ -83,6 +83,65 @@ mutable struct Fields2D <: Field
          )
     end
 end
+
+mutable struct MaterialFields2D <:Field
+    Jz :: Array{Float64, 2}
+    Pz :: Array{Float64, 2}
+    PzNl :: Array{Float64, 2}
+
+    Jz_bound :: Array{Float64, 2}
+    Jz_free :: Array{Float64, 2}
+    Jz_tunnel :: Array{Float64, 2}
+
+    ρ_cb :: Array{Float64, 2} 
+    Γ_ADK :: Array{Float64, 2} 
+
+    function MaterialFields2D(g::Grid2D)
+        new(zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)), 
+            zeros(Float64, (g.SizeX, g.SizeY)) 
+            )
+    end
+end
+
+
+mutable struct LorentzFields2D <: Field
+    Jz :: Array{Float64}
+    Pz :: Array{Float64}
+    PzNl :: Array{Float64}
+    function LorentzFields2D(m::LorentzMedium2D)
+        new(
+            zeros(Float64, (size(m.location)[1],size(m.location)[2], m.oscillators)),
+            zeros(Float64, (size(m.location)[1],size(m.location)[2], m.oscillators)),
+            zeros(Float64, (size(m.location)[1],size(m.location)[2], m.oscillators))
+            )
+    end
+end
+
+
+mutable struct DrudeFields2D <: Field
+    Jz_free :: Array{Float64}
+    function DrudeFields2D(m::DrudeMedium2D)
+        new(
+            zeros(Float64, (size(m.location)[1], size(m.location)[2]))
+        )
+    end
+end
+mutable struct TunnelFields2D <: Field
+    Jz_tunnel :: Vector{Float64}
+    dz_T :: Vector{Float64}
+    function TunnelFields2D(m::TunnelMedium2D)
+        new(
+            zeros(Float64, (size(m.location)[1], size(m.location)[2])), 
+            zeros(Float64, (size(m.location)[1], size(m.location)[2]))
+            )
+    end
+end
 #=
  These are the Fields in  the three-dimesional Case.
 =#
