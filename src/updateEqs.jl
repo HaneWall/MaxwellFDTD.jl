@@ -412,8 +412,65 @@ function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
 
 end
 
+function update_Ψ_E!(PML::CPML_Ψ_Fields_2D, F::Fields2D, g::Grid2D, c::CPML_Parameters_2D)
+    #X-Boundary,  notice that there does not exist Ey in the TMz config 
+   # @inbounds for nn in 1:g.SizeY-1
+   #     # X-Bot
+   #     for mm in 2:c.PML_Thickness[1]
+   #         PML.Ψ_Eyx[mm,nn,1] = c.b_E_x[mm, 1] * PML.Ψ_Eyx[mm,nn,1] + c.c_E_x[mm, 1] * 1/g.Δx *(F.Hz[mm-1,nn] - F.Hz[mm,nn])
+   #     end
+   #     # X-Top
+   #     m_rev = c.PML_Thickness[1]
+   #     for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+   #         PML.Ψ_Eyx[m_rev,nn,2] = c.b_E_x[m_rev, 2] * PML.Ψ_Eyx[m_rev,nn,2] + c.c_E_x[m_rev, 2] * 1/g.Δx * (F.Hz[mm-1,nn] - F.Hz[mm,nn])
+   #         m_rev = m_rev - 1
+   #     end
+   # end
+
+    @inbounds for nn in 2:g.SizeY-1
+        # X-Bot
+        for mm in 2:c.PML_Thickness[1]
+            PML.Ψ_Ezx[mm,nn,1] = c.b_E_x[mm, 1] * PML.Ψ_Ezx[mm,nn,1] + c.c_E_x[mm, 1] * 1/g.Δx *(F.Hy[mm,nn] - F.Hy[mm-1,nn])
+        end
+        # X-Top
+        m_rev = c.PML_Thickness[1]
+        for mm in (g.SizeX + 1 - c.PML_Thickness[1]):g.SizeX-1
+            PML.Ψ_Ezx[m_rev,nn,2] = c.b_E_x[m_rev, 2] * PML.Ψ_Ezx[m_rev,nn,2] + c.c_E_x[m_rev, 2] * 1/g.Δx *(F.Hy[mm,nn] - F.Hy[mm-1,nn])
+            m_rev = m_rev - 1  
+        end
+    end
+
+    #Y-Boundary, notice that there does not exist Ex in the TMz config  
+    # @inbounds for mm in 1:g.SizeX-1
+    #     # Y-Bot
+    #     for nn in 2:c.PML_Thickness[2]
+    #         PML.Ψ_Exy[mm,nn,1] = c.b_E_y[nn, 1] * PML.Ψ_Exy[mm,nn,1] + c.c_E_y[nn, 1] * 1/g.Δy *(F.Hz[mm,nn] - F.Hz[mm,nn-1])
+    #     end
+    #     # Y-Top
+    #     n_rev = c.PML_Thickness[2]
+    #     for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+    #         PML.Ψ_Exy[mm,n_rev,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Exy[mm,n_rev,2] + c.c_E_y[n_rev, 2] * 1/g.Δy * (F.Hz[mm,nn] - F.Hz[mm,nn-1])
+    #         n_rev = n_rev - 1
+    #     end
+    # end
+
+    @inbounds for mm in 2:g.SizeX-1
+        # Y-Bot
+        for nn in 2:c.PML_Thickness[2]
+            PML.Ψ_Ezy[mm,nn,1] = c.b_E_y[nn, 1] * PML.Ψ_Ezy[mm,nn,1] + c.c_E_y[nn, 1] * 1/g.Δy *(F.Hx[mm,nn-1] - F.Hx[mm,nn])
+        end
+        # Y-Top
+        n_rev = c.PML_Thickness[2]
+        for nn in (g.SizeY + 1 - c.PML_Thickness[2]):g.SizeY-1
+            PML.Ψ_Ezy[mm,n_rev,2] = c.b_E_y[n_rev, 2] * PML.Ψ_Ezy[mm,n_rev,2] + c.c_E_y[n_rev, 2] * 1/g.Δy * (F.Hx[mm,nn-1] - F.Hx[mm,nn])
+            n_rev = n_rev - 1  
+        end
+    end
+end
+
+
 function update_Ψ_E!(PML::CPML_Ψ_Fields_1D, F::Fields1D, g::Grid1D, c::CPML_Parameters_1D)
-    
+    # this is the reason why in 1d it doesnt work properly, symmetry issues 
     #X-Boundary
 
     # # X-Bot
@@ -530,6 +587,67 @@ function update_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Pa
     end;end
 end
 
+# two dimensional update 
+
+function update_Ψ_H!(PML::CPML_Ψ_Fields_2D, F::Fields2D, g::Grid2D, c::CPML_Parameters_2D)
+    #X-Boundary
+    @inbounds for nn in 1:g.SizeY-1
+        # X-Bot
+        for mm in 1:c.PML_Thickness[1]-1
+            PML.Ψ_Hyx[mm,nn,1] = c.b_H_x[mm,1] * PML.Ψ_Hyx[mm,nn,1] + c.c_H_x[mm,1]*1/g.Δx*(F.Ez[mm+1,nn] - F.Ez[mm,nn])
+        end
+        # X-top
+        m_rev = c.PML_Thickness[1]-1
+        for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+            PML.Ψ_Hyx[m_rev,nn,2] = c.b_H_x[m_rev,2] * PML.Ψ_Hyx[m_rev,nn,2] + c.c_H_x[m_rev,2]*1/g.Δx*(F.Ez[mm+1,nn] - F.Ez[mm,nn])
+            m_rev = m_rev - 1
+        end
+    end
+
+   # @inbounds for nn in 1:g.SizeY-1
+   #     # X-Bot
+   #     for mm in 1:c.PML_Thickness[1]-1
+   #         PML.Ψ_Hzx[mm,nn,1] = c.b_H_x[mm,1] * PML.Ψ_Hzx[mm,nn,1] + c.c_H_x[mm, 1] * 1/g.Δx *(F.Ey[mm,nn] - F.Ey[mm+1,nn])
+   #     end
+   #     # X-Top
+   #     m_rev = c.PML_Thickness[1]-1
+   #     for mm in (g.SizeX+1-c.PML_Thickness[1]):g.SizeX-1
+   #         PML.Ψ_Hzx[m_rev,nn,2] = c.b_H_x[m_rev, 2] * PML.Ψ_Hzx[m_rev,nn,2] +c.c_H_x[m_rev, 2] * 1/g.Δx *(F.Ey[mm,nn] - F.Ey[mm+1,nn])
+   #         m_rev = m_rev - 1
+   #     end
+   # end
+
+    #Y-Boundary
+    @inbounds for mm in 1:g.SizeX-1
+        # Y-Bot
+        for nn in 1:c.PML_Thickness[2]-1
+            PML.Ψ_Hxy[mm,nn,1] = c.b_H_y[nn,1] * PML.Ψ_Hxy[mm,nn,1] + c.c_H_y[nn,1]*1/g.Δy*(F.Ez[mm,nn] - F.Ez[mm,nn+1])
+        end
+        # Y-top
+        n_rev = c.PML_Thickness[2]-1
+        for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+            PML.Ψ_Hxy[mm,n_rev,2] = c.b_H_y[n_rev,2] * PML.Ψ_Hxy[mm,n_rev,2] + c.c_H_y[n_rev,2]*1/g.Δy*(F.Ez[mm,nn] - F.Ez[mm,nn+1])
+            n_rev = n_rev - 1
+        end
+    end
+
+   # @inbounds for mm in 1:g.SizeX-1
+   #     # Y-Bot
+   #     for nn in 1:c.PML_Thickness[2]-1
+   #         PML.Ψ_Hzy[mm,nn,1] = c.b_H_y[nn,1] * PML.Ψ_Hzy[mm,nn,1] + c.c_H_y[nn, 1] * 1/g.Δy * (F.Ex[mm,nn+1] - F.Ex[mm,nn])
+   #     end
+   #     # Y-Top
+   #     n_rev = c.PML_Thickness[2]-1
+   #     for nn in (g.SizeY+1-c.PML_Thickness[2]):g.SizeY-1
+   #         PML.Ψ_Hzy[mm,n_rev,2] = c.b_H_y[n_rev, 2] * PML.Ψ_Hzy[mm,n_rev,2] +c.c_H_y[n_rev, 2] * 1/g.Δy * (F.Ex[mm,nn+1] - F.Ex[mm,nn])
+   #         n_rev = n_rev - 1
+   #     end
+   # end
+
+end
+
+
+# one dimensional update
 function update_Ψ_H!(PML::CPML_Ψ_Fields_1D, F::Fields1D, g::Grid1D, c::CPML_Parameters_1D)
     #X-Boundary
     
@@ -580,6 +698,17 @@ function apply_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Par
     @. F.Ez[2:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 1:g.SizeZ-1] += CB * PML.Ψ_Ezy[2:g.SizeX-1, (c.PML_Thickness[2]):-1:begin+1, 1:g.SizeZ-1, 2]
 end
 
+function apply_Ψ_E!(PML::CPML_Ψ_Fields_2D, F::Fields2D, g::Grid2D, c::CPML_Parameters_2D)
+    CB = (g.Δt/ϵ_0)
+    CA = 1.
+    @. F.Ez[2:c.PML_Thickness[1], 2:g.SizeY-1] += CB * PML.Ψ_Ezx[2:c.PML_Thickness[1], 2:g.SizeY-1, 1]
+    @. F.Ez[(g.SizeX+1-c.PML_Thickness[1]):(g.SizeX-1), 2:g.SizeY-1] += CB * PML.Ψ_Ezx[(c.PML_Thickness[1]):-1:begin+1, 2:g.SizeY-1, 2]
+
+    @. F.Ez[2:g.SizeX-1, 2:c.PML_Thickness[2]] += CB * PML.Ψ_Ezy[2:g.SizeX-1, 2:c.PML_Thickness[2], 1]
+    @. F.Ez[2:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1)] += CB * PML.Ψ_Ezy[2:g.SizeX-1, (c.PML_Thickness[2]):-1:begin+1, 2]
+end
+
+
 function apply_Ψ_E!(PML::CPML_Ψ_Fields_1D, F::Fields1D, g::Grid1D, c::CPML_Parameters_1D)
     CB = (g.Δt/ϵ_0)
     CA = 1.
@@ -609,6 +738,18 @@ function apply_Ψ_H!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Par
 
     @. F.Hz[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 2:g.SizeZ-1, 1]
     @. F.Hz[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 2:g.SizeZ-1] += DB * PML.Ψ_Hzy[1:g.SizeX-1, (c.PML_Thickness[2]-1):-1:begin, 2:g.SizeZ-1, 2]
+end
+
+
+function apply_Ψ_H!(PML::CPML_Ψ_Fields_2D, F::Fields2D, g::Grid2D, c::CPML_Parameters_2D)
+    DB = g.Δt/μ_0
+
+    @. F.Hx[1:g.SizeX-1, 1:c.PML_Thickness[2]-1] += DB * PML.Ψ_Hxy[1:g.SizeX-1, 1:c.PML_Thickness[2]-1, 1]
+    @. F.Hx[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1)] += DB * PML.Ψ_Hxy[1:g.SizeX-1, (c.PML_Thickness[2]-1):-1:begin, 2]
+    
+    @. F.Hy[1:c.PML_Thickness[1]-1, 1:g.SizeY-1] += DB * PML.Ψ_Hyx[1:c.PML_Thickness[1]-1, 1:g.SizeY-1, 1]
+    @. F.Hy[(g.SizeX+1-c.PML_Thickness[1]):(g.SizeX-1), 1:g.SizeY-1] += DB * PML.Ψ_Hyx[(c.PML_Thickness[1]-1):-1:begin, 1:g.SizeY-1, 2]
+
 end
 
 function apply_Ψ_H!(PML::CPML_Ψ_Fields_1D, F::Fields1D, g::Grid1D, c::CPML_Parameters_1D)

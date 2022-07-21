@@ -36,6 +36,43 @@ end
 #=
  These are the coefficients in the two-dimensional Case.
 =#
+struct GridCoefficients2D_w_CPML <: Coeff
+    grid :: Grid2D
+    Chxh :: Array{Float64, 2}
+    Chxe :: Array{Float64, 2}
+    Chyh :: Array{Float64, 2}
+    Chye :: Array{Float64, 2}
+    Cezh :: Array{Float64, 2}
+    Ceze :: Array{Float64, 2}
+
+    Den_Hx :: Array{Float64, 1}
+    Den_Ex :: Array{Float64, 1}
+
+    Den_Hy :: Array{Float64, 1}
+    Den_Ey :: Array{Float64, 1}
+
+    function GridCoefficients2D_w_CPML(g::Grid2D, m::Vector{T}, c::CPML_Parameters_2D) where T<:Medium
+        Chxh = fill(1.0,(g.SizeX, g.SizeY))
+        Chxe = fill(g.Δt/(μ_0),(g.SizeX, g.SizeY))
+        Chyh = fill(1.0,(g.SizeX, g.SizeY))
+        Chye = fill(g.Δt/(μ_0),(g.SizeX, g.SizeY))
+        Ceze = fill(1.0,(g.SizeX, g.SizeY))
+        Cezh = fill(g.Δt/(ϵ_0),(g.SizeX, g.SizeY))
+        
+        Den_Hx = c.denominator_H_x
+        Den_Ex = c.denominator_E_x
+
+        Den_Hy = c.denominator_H_y
+        Den_Ey = c.denominator_E_y
+
+        for medium in m
+            Cexh[medium.location] .= Cexh[medium.location] ./ medium.ϵ_inf
+            Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
+        end
+        
+        new(g, Chxh, Chxe, Chyh, Chye, Cezh, Ceze, Den_Hx, Den_Ex, Den_Hy, Den_Ey)
+    end
+end
 
 #=
  These are the coefficients in the three-dimensional Case.
