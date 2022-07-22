@@ -125,7 +125,7 @@ end
 
 
 mutable struct DrudeFields2D <: Field
-    Jz_free :: Array{Float64}
+    Jz_free :: Array{Float64, 2}
     function DrudeFields2D(m::DrudeMedium2D)
         new(
             zeros(Float64, (size(m.location)[1], size(m.location)[2]))
@@ -133,8 +133,8 @@ mutable struct DrudeFields2D <: Field
     end
 end
 mutable struct TunnelFields2D <: Field
-    Jz_tunnel :: Vector{Float64}
-    dz_T :: Vector{Float64}
+    Jz_tunnel :: Array{Float64, 2}
+    dz_T :: Array{Float64, 2}
     function TunnelFields2D(m::TunnelMedium2D)
         new(
             zeros(Float64, (size(m.location)[1], size(m.location)[2])), 

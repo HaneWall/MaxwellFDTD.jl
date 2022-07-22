@@ -174,7 +174,7 @@ end
 
 function update_displacement!(TF::TunnelFields2D, F::Fields2D, M::TunnelMedium2D)
     @inbounds begin 
-        @. TF.dz_T[:] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
+        @. TF.dz_T[:, :] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
     end
 end
 

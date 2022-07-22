@@ -16,12 +16,12 @@ const amplitude = 1.
 const ppw = 20.
 
 const Δx = Δy = 2e-9
-const MaxTime = 240
+const MaxTime = 440
 
 function ricker(t,location)
     src = 0
-    delay = 25
-    ppw = 20
+    delay = 60
+    ppw = 30
     if t > delay
         arg = π * ((1/sqrt(3.0) * (t - (delay+1)) - location) / ppw - 1)
         src = 30*(1.0 - 2.0 * arg^2) * exp(-(arg^2))
@@ -36,7 +36,7 @@ F = Fields2D(g)
 F_PML = CPML_Ψ_Fields_2D(g, PML_Thickness)
 c_PML = CPML_Parameters_2D(g, PML_Thickness)
 
-const m_location = CartesianIndices((24:35, 15:21))
+const m_location = CartesianIndices((20:80, 20:40))
 m = StaticMedium2D(g, m_location, 1.)
 media = [m]
 

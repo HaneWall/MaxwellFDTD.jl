@@ -120,7 +120,43 @@ function sourceH!(S::RickerPointSource, F::Fields1D, timestep::Int64)
     end
 end
 
-# 3-dimensional Sources
+#----------------------------------------------------------------------------------------------
+# two dimensional sources
+#----------------------------------------------------------------------------------------------
+
+struct GaussianWavePointSource2D <: Source 
+    grid:: Grid2D
+    location :: CartesianIndex
+    soft :: Bool
+    sf_left :: Bool 
+    sf_right :: Bool
+    amplitude :: Float64
+    t_step_peak :: Int64
+    t_fwhm :: Float64
+    ppw :: Float64
+end
+
+function sourceE!(S::GaussianWavePointSource2D, F::Fields2D, timestep::Int64)
+    if S.soft
+        F.Ez[S.location] += S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - (S.location[1] - 0.5)))
+        #F.Ez[S.location] += S.amplitude * exp(-(timestep - S.t_step_peak)^2/S.t_width) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
+    else
+        F.Ez[S.location] = S.amplitude * exp(-2*log(2)*((timestep - S.t_step_peak)*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1]))
+    end
+end
+
+function sourceH!(S::GaussianWavePointSource2D, F::Fields2D, timestep::Int64)
+    if S.soft && S.sf_left
+        F.Hy[S.location - CartesianIndex((1,))] -= S.grid.S_c * S.amplitude * exp(-2*log(2)*((timestep - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep) - S.location[1])) / 376.730
+    elseif S.soft && S.sf_right
+        F.Hy[S.location + CartesianIndex((1,))] += S.amplitude * exp(-(timestep - (S.t_step_peak-1))^2/S.t_width) * sin(2*π/S.ppw * (S.grid.S_c * timestep - S.location[1])) /377.
+    end
+end
+
+
+#----------------------------------------------------------------------------------------------
+# three dimensional sources
+#----------------------------------------------------------------------------------------------
 
 
 struct RickerPointSource3D <: Source
