@@ -10,7 +10,7 @@ start = time()
 
 const SizeX = 100
 const SizeY = 100
-const courant = 1.0/(sqrt(2.0))
+const courant = 0.985 * 1.0/(sqrt(2.0))
 
 const amplitude = 1.
 const ppw = 20.

@@ -81,10 +81,10 @@ TF1 = TunnelFields2D(m3)
 TF = [TF1]
 
 plane_pos = CartesianIndices((1:SizeX, 1:SizeY))
-d1 = PlaneDetector(plane_pos, 80000, MaxTime)
+d1 = PlaneDetector(plane_pos, 95000, MaxTime)
 detectors = [d1]
 
-s1 = GaussianWavePointSource2D(g, CartesianIndex((40, 40)),true, true, false, amplitude_probe, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
+s1 = GaussianWavePointSource2D(g, CartesianIndex((40, 40)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
 sources = [s1]
 
 CPUtoq()
