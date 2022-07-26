@@ -14,12 +14,12 @@ CPUtic()
 start = time()
 
 # 1. define grid
-SizeX = 100
-SizeY = 100
-SizeZ = 100
-courant = 0.985 * 1/sqrt(3)
+SizeX = 50
+SizeY = 50
+SizeZ = 50
+courant = 0.95 * 1/sqrt(3)
 Δx = Δy = Δz = 2e-9
-MaxTime = 10000
+MaxTime = 100
 
 # 1. define grid
 g = Grid3D(SizeX, SizeY, SizeZ, courant, Δx, Δy, Δz, MaxTime)
@@ -62,9 +62,9 @@ c_PML = CPML_Parameters_3D(g, PML_Thickness)
 
 
 # init the media (superposition of different effects, that act inside the medium)
-m1 = LorentzMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), E_gap, ρ_mol_density)
+m1 = LorentzMedium3D(g, CartesianIndices((30:50, 1:50, 1:50)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium3D(g, CartesianIndices((30:50, 1:50, 1:50)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium3D(g, CartesianIndices((30:50, 1:50, 1:50)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
@@ -83,10 +83,10 @@ TF1 = TunnelFields3D(m3)
 TF = [TF1]
 
 block_pos = CartesianIndices((1:SizeX, 1:SizeY, 1:SizeZ))
-d1 = BlockDetector(plane_pos, 3000, 7000)
-detectors = [d1]
+d1 = BlockDetector(block_pos, 6999, 7000)
+detectors = []
 
-s1 = GaussianWavePointSource3D(g, CartesianIndex((25, 50, 50)),false, true, false, amplitude_pump, ceil(50e-15/g.Δt), t_fwhm_probe, ppw_probe)
+s1 = GaussianWavePointSource3D(g, CartesianIndex((22, 25, 25)),false, true, false, amplitude_pump, ceil(50e-15/g.Δt), t_fwhm_probe, ppw_probe)
 sources = [s1]
 
 CPUtoq()
@@ -97,7 +97,7 @@ start = time()
 
 for timestep in ProgressBar(1:g.MaxTime)
     
-    for (m_idx, m) in enumerate(tunnel_media)
+    @inbounds for (m_idx, m) in enumerate(tunnel_media)
         updatePlasma!(MF, TF[m_idx], f_grid, F, m)
         updateJtunnel!(MF, TF[m_idx], m)
     end
@@ -107,11 +107,11 @@ for timestep in ProgressBar(1:g.MaxTime)
     #     updateJtunnel!(MF, TF[m_idx], m)
     # end
 
-    for (m_idx, m) in enumerate(drude_media)
+    @inbounds for (m_idx, m) in enumerate(drude_media)
         updateJfree!(MF, DF[m_idx], F, m)
     end
 
-    for (m_idx, m) in enumerate(bound_media)
+    @inbounds for (m_idx, m) in enumerate(bound_media)
         updatePNl!(MF, LF[m_idx], F, m)
         updateJbound!(MF, LF[m_idx], m, g)
         updatePbound!(MF, LF[m_idx], m, g)
@@ -146,7 +146,7 @@ for timestep in ProgressBar(1:g.MaxTime)
         #safeJ_bound!(d, MF, timestep)
         safeE!(d, F, timestep)
         #safeP!(d, MF, timestep)
-        safeJ!(d, MF, timestep)
+        #safeJ!(d, MF, timestep)
         #safePNl!(d, MF, timestep)
     end
 end

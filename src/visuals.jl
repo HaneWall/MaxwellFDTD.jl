@@ -128,6 +128,16 @@ function timeseries_plot(arr::Array{Float64,1})
     fig
 end
 
+function timeseries_plot(arr::Array{Float64,1}, legend::String, name::String)
+    timesteps = length(arr)
+    fig = Figure(resolution = (800, 800))
+    ax = Axis(fig[1, 1], title="Log10-Timeseries")
+    lines!(ax, 1:1:timesteps, log10.(abs.(arr)./maximum(arr)), label = L"%$legend")
+    ax2 = Axis(fig[2, 1], title="Timeseries")
+    lines!(ax2, 1:1:timesteps, arr, label = L"%$legend")
+    axislegend(ax, position=:rb)
+    save(name, fig)
+end
 
 
 function plot_amplitude_spectrum(t::Array{Float64,1}, signal::Array{Float64,1})
@@ -252,14 +262,22 @@ function plot_log10_power_spectrum_current_and_E(t::Array{Float64,1}, signal::Ma
     δf = 1/δt
     ω = 2*π*fftshift(fftfreq(padded_L, δf))./ω_central
     window = blackman(L)
+    max_arr = 0.
     for idx in 1:size(signal)[2]
         sigpad = zeros(eltype(signal[:,idx]), padded_L)
         sigpad[center_help_L_low:center_help_L_high] = window.*signal[:, idx]
         FT = fftshift(fft(sigpad))
-        if idx == 2
-            lines!(ax, ω, 9.3 .+ log10.(((abs.(ω .* FT)./padded_L).^2)), label=L"%$(legend[idx])")
+        if idx == 1
+            jz = log10.(((abs.(FT)./padded_L).^2)) 
+            max_arr = maximum(jz)
+            lines!(ax, ω, jz./max_arr, label=L"%$(legend[idx])")
+        elseif idx == 2
+            res = log10.(((abs.(ω .* FT)./padded_L).^2))
+            shift = 1- maximum(res./max_arr)
+            lines!(ax, ω,  res./max_arr .+ shift, label=L"%$(legend[idx])", linestyle = :dash)
         else
-            lines!(ax, ω, log10.(((abs.(FT)./padded_L).^2)), label=L"%$(legend[idx])")
+            j = log10.(((abs.(FT)./padded_L).^2)) 
+            lines!(ax, ω, j./max_arr, label=L"%$(legend[idx])")
         end
     end
     axislegend(ax, position=:rt)

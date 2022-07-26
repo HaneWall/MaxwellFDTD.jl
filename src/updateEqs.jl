@@ -313,21 +313,21 @@ function updateE!(F::Fields3D, MF::MaterialFields3D, g::Grid3D, c::GridCoefficie
         for nn = 2:g.SizeY-1
             for mm = 1:g.SizeX-1
                 F.Ex[mm,nn,pp] = (c.Cexe[mm,nn,pp] * F.Ex[mm,nn,pp] + 
-                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])*c.Den_Ey[nn] - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])*c.Den_Ez[pp] - MF.Jx))
+                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])*c.Den_Ey[nn] - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])*c.Den_Ez[pp] - MF.Jx[mm,nn,pp]))
             end;end;end
 
     @inbounds for pp = 2:g.SizeZ-1
         for nn = 1:g.SizeY-1
             for mm = 2:g.SizeX-1
                 F.Ey[mm,nn,pp] = (c.Ceye[mm,nn,pp] * F.Ey[mm,nn,pp] + 
-                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])*c.Den_Ez[pp] - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])*c.Den_Ex[mm] - MF.Jy))
+                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])*c.Den_Ez[pp] - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])*c.Den_Ex[mm] - MF.Jy[mm,nn,pp]))
             end;end;end
     
     @inbounds for pp = 1:g.SizeZ-1
         for nn = 2:g.SizeY-1
             for mm = 2:g.SizeX-1
                 F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
-                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])*c.Den_Ex[mm] - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])*c.Den_Ey[nn] - MF.Jz))
+                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])*c.Den_Ex[mm] - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])*c.Den_Ey[nn] - MF.Jz[mm,nn,pp]))
             end;end;end
 end
 #            F.Ez[mm,nn] = (c.Ceze[mm,nn] * F.Ez[mm,nn] + c.Cezh[mm,nn] * ((F.Hy[mm,nn] - F.Hy[mm-1,nn])*c.Den_Ex[mm] - (F.Hx[mm,nn] - F.Hx[mm,nn-1])*c.Den_Ey[nn] - MF.Jz[mm,nn]))

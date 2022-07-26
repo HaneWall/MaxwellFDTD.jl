@@ -101,7 +101,7 @@ struct StaticMedium3D <: Medium
 end
 
 struct LorentzMedium3D <: Medium
-    grid :: Grid1D
+    grid :: Grid3D
     location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
     ϵ_inf :: Float64
     oscillators :: Int64
@@ -120,9 +120,10 @@ struct DrudeMedium3D <: Medium
     grid :: Grid3D
     location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
     γ :: Float64
+    ρ_mol_density :: Float64
     Γ :: Float64
-    function DrudeMedium3D(g::Grid3D, location::CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}, damping::Float64)
-        new(g, location, damping, damping*g.Δt/2)
+    function DrudeMedium3D(g::Grid3D, location::CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}, damping::Float64, mol_density::Float64)
+        new(g, location, damping, mol_density, damping*g.Δt/2)
     end
 end
 

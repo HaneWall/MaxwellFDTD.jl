@@ -16,7 +16,7 @@ start = time()
 SizeX = 30000
 courant = 0.985
 Δx = 2e-9
-MaxTime = 150000
+MaxTime = 140000
 
 # 1. define grid
 g = Grid1D(SizeX, courant, Δx, MaxTime)
@@ -25,10 +25,10 @@ t = g.Δt:g.Δt:g.Δt*MaxTime
 # varin paramters Si02
 ρ_mol_density = 2.2e28
 # bound electrons
-γ_lorentz = [0.]
+γ_lorentz = [0.0]
 ω_0 = [2.75e16] # this might not work, use 2*π*/g.Δt instead (old varin paper/bachelor thesis) 2.75e16
 χ_1 = [1.1025]
-χ_2 = [0.]
+χ_2 = [0.0]
 χ_3 = [2.2e-22]
 
 # drude parameters
@@ -40,15 +40,15 @@ E_gap = 7.5
 # source parameters
 λ = 2100e-9
 ω_central = 2 * π * c_0 / λ
-ppw = λ/Δx
+ppw = λ / Δx
 t_fwhm = 20e-15 # intensity FWHM
 amplitude_pump = intensity2amplitude(12e16) # 12TWcm^-2
 
 λ_probe = 800e-9
-ω_probe= 2 * π * c_0 / λ_probe
-ppw_probe = λ_probe/Δx
+ω_probe = 2 * π * c_0 / λ_probe
+ppw_probe = λ_probe / Δx
 t_fwhm_probe = 45e-15 # intensity FWHM
-amplitude_probe = intensity2amplitude(1.5e14) 
+amplitude_probe = intensity2amplitude(1.5e14)
 
 # 2. define fields that exist everywhere
 F = Fields1D(g)
@@ -60,11 +60,11 @@ F_PML = CPML_Ψ_Fields_1D(g, PML_Thickness)
 c_PML = CPML_Parameters_1D(g, PML_Thickness)
 
 # init the media (superposition of different effects, that act inside the medium)
-m1 = LorentzMedium1D(g, CartesianIndices((15000:29999,)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m1 = LorentzMedium1D(g, CartesianIndices((15000:29999,)), 1.0, γ_lorentz, ω_0, χ_1, χ_2, χ_3)
 m2 = DrudeMedium1D(g, CartesianIndices((15000:29999,)), γ_plasma, ρ_mol_density)
 m3 = TunnelMedium1D(g, CartesianIndices((15000:29999,)), E_gap, ρ_mol_density)
 
-bound_media= [m1]
+bound_media = [m1]
 drude_media = [m2]
 tunnel_media = [m3]
 
@@ -85,35 +85,35 @@ TF = [TF1]
 d2 = PointDetector(CartesianIndex((15000,)), 1, g.MaxTime)
 d3 = PointDetector(CartesianIndex((22000,)), 1, g.MaxTime)
 d4 = PointDetector(CartesianIndex((505,)), 1, g.MaxTime)
-detectors =  [d2, d3, d4]
+detectors = [d2, d3, d4]
 
 # 7. place sources 
-s0 = GaussianWavePointSource(g, CartesianIndex((508,)),true, true, false, amplitude_pump, ceil(500e-15/g.Δt), t_fwhm, ppw)
-s1 = GaussianWavePointSource(g, CartesianIndex((508,)),true, true, false, amplitude_probe, ceil(500e-15/g.Δt), t_fwhm_probe, ppw_probe)
+s0 = GaussianWavePointSource(g, CartesianIndex((508,)), true, true, false, amplitude_pump, ceil(500e-15 / g.Δt), t_fwhm, ppw)
+s1 = GaussianWavePointSource(g, CartesianIndex((508,)), true, true, false, amplitude_probe, ceil(500e-15 / g.Δt), t_fwhm_probe, ppw_probe)
 sources = [s0]
 
 CPUtoq()
-println("elapsed real time: ", round(time() - start; digits=3)," seconds")
+println("elapsed real time: ", round(time() - start; digits=3), " seconds")
 println("Init Complete")
 CPUtic()
 start = time()
 
 
-Ê = amplitude_pump + amplitude_probe
-Γ̂ = Γ_ADK(Ê, E_gap*q_0)
-a = effective_nonlinearity_m(Ê, E_gap*q_0)
+Ê = amplitude_pump
+Γ̂ = Γ_ADK(Ê, E_gap * q_0)
+a = 13.0
 
 for timestep in ProgressBar(1:g.MaxTime)
-    
-    for (m_idx, m) in enumerate(tunnel_media)
-        updatePlasma!(MF, TF[m_idx], f_grid, F, m)
-        updateJtunnel!(MF, TF[m_idx], m)
-    end
 
     # for (m_idx, m) in enumerate(tunnel_media)
-    #     updatePlasmaTangent!(MF, TF[m_idx], f_grid, F, m, a, Γ̂, Ê)
+    #     updatePlasma!(MF, TF[m_idx], f_grid, F, m)
     #     updateJtunnel!(MF, TF[m_idx], m)
     # end
+
+    for (m_idx, m) in enumerate(tunnel_media)
+        updatePlasmaTangent!(MF, TF[m_idx], f_grid, F, m, a, Γ̂, Ê)
+        updateJtunnel!(MF, TF[m_idx], m)
+    end
 
     for (m_idx, m) in enumerate(drude_media)
         updateJfree!(MF, DF[m_idx], F, m)
@@ -136,7 +136,7 @@ for timestep in ProgressBar(1:g.MaxTime)
     end
 
     apply_Ψ_H!(F_PML, F, g, c_PML)
-    
+
     update_Ψ_E!(F_PML, F, g, c_PML)
 
     updateE!(F, MF, g, c_grid)
@@ -147,7 +147,7 @@ for timestep in ProgressBar(1:g.MaxTime)
 
     apply_Ψ_E!(F_PML, F, g, c_PML)
 
-    for d in detectors 
+    for d in detectors
         #safeΓ_ADK!(d, MF, timestep)
         safeJ_tunnel!(d, MF, timestep)
         safeJ_free!(d, MF, timestep)
@@ -160,5 +160,46 @@ for timestep in ProgressBar(1:g.MaxTime)
 end
 
 CPUtoq()
-println("elapsed real time: ", round(time() - start; digits=3)," seconds")
+println("elapsed real time: ", round(time() - start; digits=3), " seconds")
 println("Computation Complete")
+
+## 
+timeseries_plot(
+    d4.Ez, 
+    "E_{z, refl}", 
+    "detector_SF.pdf")
+
+##
+timeseries_plot(
+    d2.Ez, 
+    "E_{z, first cell medium}", 
+    "detector_first_cell.pdf")
+
+##
+timeseries_plot(
+    d3.Ez, 
+    "E_{z, 7000 cells inside}", 
+    "detector_mid.pdf")
+
+##
+plot_log10_power_spectrum(
+    Array(80000*g.Δt:g.Δt:100000*g.Δt),
+    hcat(d2.J_Free[80000:100000], d2.J_Bound[80000:100000],
+        d2.J_Tunnel[80000:100000]),
+    ω_central,
+    [0.0, 20.0],
+    [0.0, 25.0],
+    ["J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
+    true,
+   "tangentadk_a_13.pdf")
+
+##
+plot_log10_power_spectrum_current_and_E(
+    Array(80000*g.Δt:g.Δt:100000*g.Δt),
+    hcat(d2.Jz[80000:100000], d4.Ez[94500:114500], d2.J_Free[80000:100000], d2.J_Bound[80000:100000], d2.J_Tunnel[80000:100000]),
+    ω_central,
+    [0.0, 20.0],
+    [0.0, 1.0],
+    ["J_z", "E_{z, Refl}", "J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
+    true,
+    "Reflection_tangentadk_a_13.pdf")
