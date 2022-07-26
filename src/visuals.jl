@@ -81,6 +81,25 @@ function slide_arr_over_time(arr::Array{Float64, 4})
     f
 end
 
+function record_arr_over_time(arr::Array{Float64, 3}, filename::String)
+    f = Figure(resolution = (1000, 1000))
+    ax = Axis(f[1, 1])
+    t_index = Observable(1)
+    t_slice = @lift(abs.(arr[$t_index, :, :]))
+    clims = @lift 1.1 .* extrema(abs.(arr[$t_index, :, :]))
+    frames = 1:size(arr, 1)
+    x = 1:1:size(arr, 2)
+    y = 1:1:size(arr, 3)
+    vol = heatmap!(ax, x, y, t_slice; colormap=:turbo, transparency=true, colorrange=clims)
+    #vol = volume!(ax, x, y, z, t_slice; colormap=:turbo, transparency=true)
+    #Colorbar(f[1, 2], vol)
+    record(f, filename * ".mp4", frames, framerate=8) do i
+        msg = string("Plotting frame ", i, " of ", frames[end])
+        print(msg * " \r")
+        t_index[] = i
+    end
+end
+
 function record_arr_over_time(arr::Array{Float64, 4}, filename::String)
     f = Figure(resolution = (1000, 1000))
     ax = Axis3(f[1,1], perspectiveness=0.5)

@@ -125,3 +125,13 @@ struct DrudeMedium3D <: Medium
         new(g, location, damping, damping*g.Δt/2)
     end
 end
+
+struct TunnelMedium3D <: Medium
+    grid :: Grid3D
+    location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}
+    E_gap :: Float64
+    ρ_mol_density :: Float64
+    function TunnelMedium3D(g::Grid3D,  location :: CartesianIndices{3, Tuple{UnitRange{Int64}, UnitRange{Int64}, UnitRange{Int64}}}, bandgap::Float64, mol_density::Float64)
+        new(g, location, bandgap, mol_density)
+    end
+end

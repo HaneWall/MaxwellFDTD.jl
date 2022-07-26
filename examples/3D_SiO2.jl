@@ -1,3 +1,4 @@
+
 using MaxwellFDTD
 using CPUTime
 using FFTW
@@ -14,13 +15,14 @@ start = time()
 
 # 1. define grid
 SizeX = 100
-SizeY = 80 
-courant = 0.985 * 1/sqrt(2)
-Δx = Δy = 2e-9
+SizeY = 100
+SizeZ = 100
+courant = 0.985 * 1/sqrt(3)
+Δx = Δy = Δz = 2e-9
 MaxTime = 10000
 
 # 1. define grid
-g = Grid2D(SizeX, SizeY, courant, Δx, Δy, MaxTime)
+g = Grid3D(SizeX, SizeY, SizeZ, courant, Δx, Δy, Δz, MaxTime)
 t = g.Δt:g.Δt:g.Δt*MaxTime
 
 # varin paramters Si02
@@ -51,40 +53,40 @@ ppw_probe = λ_probe/Δx
 t_fwhm_probe = 45e-15 # intensity FWHM
 amplitude_probe = intensity2amplitude(1.5e14) 
 
-F = Fields2D(g)
-MF = MaterialFields2D(g)
+F = Fields3D(g)
+MF = MaterialFields3D(g)
 
-PML_Thickness = [30, 30]
-F_PML = CPML_Ψ_Fields_2D(g, PML_Thickness)
-c_PML = CPML_Parameters_2D(g, PML_Thickness)
+PML_Thickness = [10, 10, 10]
+F_PML = CPML_Ψ_Fields_3D(g, PML_Thickness)
+c_PML = CPML_Parameters_3D(g, PML_Thickness)
 
 
 # init the media (superposition of different effects, that act inside the medium)
-m1 = LorentzMedium2D(g, CartesianIndices((50:100, 1:80)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
-m2 = DrudeMedium2D(g, CartesianIndices((50:100, 1:80)), γ_plasma, ρ_mol_density)
-m3 = TunnelMedium2D(g, CartesianIndices((50:100, 1:80)), E_gap, ρ_mol_density)
+m1 = LorentzMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), 1., γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m2 = DrudeMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), γ_plasma, ρ_mol_density)
+m3 = TunnelMedium3D(g, CartesianIndices((50:100, 1:100, 1:100)), E_gap, ρ_mol_density)
 
 bound_media= [m1]
 drude_media = [m2]
 tunnel_media = [m3]
 
 # 4. define grid coefficients that respect ϵ_inf from the media 
-c_grid = GridCoefficients2D_w_CPML(g, bound_media, c_PML)
-f_grid = FieldIonizationCoefficients2D(g)
+c_grid = GridCoefficients3D_w_CPML(g, bound_media, c_PML)
+f_grid = FieldIonizationCoefficients3D(g)
 
 # 5. define fields inside the media
-LF1 = LorentzFields2D(m1)
+LF1 = LorentzFields3D(m1)
 LF = [LF1]
-DF1 = DrudeFields2D(m2)
+DF1 = DrudeFields3D(m2)
 DF = [DF1]
-TF1 = TunnelFields2D(m3)
+TF1 = TunnelFields3D(m3)
 TF = [TF1]
 
-plane_pos = CartesianIndices((1:SizeX, 1:SizeY))
-d1 = PlaneDetector(plane_pos, 3000, 7000)
+block_pos = CartesianIndices((1:SizeX, 1:SizeY, 1:SizeZ))
+d1 = BlockDetector(plane_pos, 3000, 7000)
 detectors = [d1]
 
-s1 = GaussianWavePointSource2D(g, CartesianIndex((40, 40)),false, true, false, amplitude_pump, ceil(50e-15/g.Δt), t_fwhm_probe, ppw_probe)
+s1 = GaussianWavePointSource3D(g, CartesianIndex((25, 50, 50)),false, true, false, amplitude_pump, ceil(50e-15/g.Δt), t_fwhm_probe, ppw_probe)
 sources = [s1]
 
 CPUtoq()
@@ -144,7 +146,7 @@ for timestep in ProgressBar(1:g.MaxTime)
         #safeJ_bound!(d, MF, timestep)
         safeE!(d, F, timestep)
         #safeP!(d, MF, timestep)
-        #safeJ!(d, MF, timestep)
+        safeJ!(d, MF, timestep)
         #safePNl!(d, MF, timestep)
     end
 end

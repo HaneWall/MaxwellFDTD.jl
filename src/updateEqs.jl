@@ -308,6 +308,30 @@ function updateE!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_w_CPML)
             end;end;end
 end
 
+function updateE!(F::Fields3D, MF::MaterialFields3D, g::Grid3D, c::GridCoefficients3D_w_CPML)
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 1:g.SizeX-1
+                F.Ex[mm,nn,pp] = (c.Cexe[mm,nn,pp] * F.Ex[mm,nn,pp] + 
+                                c.Cexh[mm,nn,pp] * ((F.Hz[mm,nn,pp] - F.Hz[mm,nn-1,pp])*c.Den_Ey[nn] - (F.Hy[mm,nn,pp] - F.Hy[mm,nn,pp-1])*c.Den_Ez[pp] - MF.Jx))
+            end;end;end
+
+    @inbounds for pp = 2:g.SizeZ-1
+        for nn = 1:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ey[mm,nn,pp] = (c.Ceye[mm,nn,pp] * F.Ey[mm,nn,pp] + 
+                                c.Ceyh[mm,nn,pp] * ((F.Hx[mm,nn,pp] - F.Hx[mm,nn,pp-1])*c.Den_Ez[pp] - (F.Hz[mm,nn,pp] - F.Hz[mm-1,nn,pp])*c.Den_Ex[mm] - MF.Jy))
+            end;end;end
+    
+    @inbounds for pp = 1:g.SizeZ-1
+        for nn = 2:g.SizeY-1
+            for mm = 2:g.SizeX-1
+                F.Ez[mm,nn,pp] = (c.Ceze[mm,nn,pp] * F.Ez[mm,nn,pp] + 
+                                c.Cezh[mm,nn,pp] * ((F.Hy[mm,nn,pp] - F.Hy[mm-1,nn,pp])*c.Den_Ex[mm] - (F.Hx[mm,nn,pp] - F.Hx[mm,nn-1,pp])*c.Den_Ey[nn] - MF.Jz))
+            end;end;end
+end
+#            F.Ez[mm,nn] = (c.Ceze[mm,nn] * F.Ez[mm,nn] + c.Cezh[mm,nn] * ((F.Hy[mm,nn] - F.Hy[mm-1,nn])*c.Den_Ex[mm] - (F.Hx[mm,nn] - F.Hx[mm,nn-1])*c.Den_Ey[nn] - MF.Jz[mm,nn]))
+
 function updateH!(F::Fields3D, g::Grid3D, c::GridCoefficients3D_w_CPML)  
     @inbounds for pp = 1:g.SizeZ-1
         for nn = 1:g.SizeY-1
@@ -359,6 +383,30 @@ function updateE!(F::Fields3D, MF::MaterialFields3D, g::Grid3D, c::GridCoefficie
     return Ex,Ey,Ez
 end
 
+function update_ρ!(MF::MaterialFields3D, M::TunnelMedium3D)
+    @inbounds begin 
+        @. MF.ρ_cb[M.location]  = (M.grid.Δt * MF.Γ_ADK[M.location]) / (1 + M.grid.Δt/2 * MF.Γ_ADK[M.location]) + (1 - M.grid.Δt/2 * MF.Γ_ADK[M.location])/(1 + M.grid.Δt/2 *MF.Γ_ADK[M.location]) * MF.ρ_cb[M.location]
+    end
+end
+
+function update_Γ_ADK!(MF::MaterialFields3D, F::Fields3D, FC::FieldIonizationCoefficients3D, M::TunnelMedium3D)
+    @inbounds MF.Γ_ADK[M.location] = Γ_ADK(F.Ez[M.location], FC.gamma_au[M.location], M.E_gap * q_0, 1, 0, 0)
+end
+
+function update_Γ_Tangent!(MF::MaterialFields3D, F::Fields3D, FC::FieldIonizationCoefficients3D, M::TunnelMedium3D, a::Float64, Γ̂::Float64, Ê::Float64)
+    @inbounds MF.Γ_ADK[M.location] = Γ_Tangent(F.Ez[M.location], FC.gamma_au[M.location], a, Γ̂, Ê)
+end
+
+function update_displacement!(TF::TunnelFields3D, F::Fields3D, M::TunnelMedium3D)
+    @inbounds begin 
+        @. TF.dz_T[:, :, :] = M.ρ_mol_density * M.E_gap*q_0*F.Ez[M.location] / (q_0 * abs(F.Ez[M.location] + 1e-6)^2) 
+    end
+end
+
+function updateJ!(MF::MaterialFields3D)
+    @inbounds MF.Jz .= MF.Jz_bound .+ MF.Jz_free .+ MF.Jz_tunnel
+end
+
 function updateJbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid3D)
     @inbounds for osci in 1:M.oscillators
         for pp in 1:size(M.location)[3]
@@ -369,9 +417,9 @@ function updateJbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedi
                     LF.Jz[mm, nn, pp, osci] = (1.0-M.Γ[osci])/(1.0+M.Γ[osci])*LF.Jz[mm,nn,pp,osci] + (g.Δt*(M.ω_0[osci])^2)/(1.0+M.Γ[osci]) * (LF.PzNl[mm,nn,pp,osci] - LF.Pz[mm,nn,pp,osci]) 
         end;end;end
     end
-    @inbounds MF.Jx[M.location] .= sum(LF.Jx, dims=4)[:]
-    @inbounds MF.Jy[M.location] .= sum(LF.Jy, dims=4)[:]
-    @inbounds MF.Jz[M.location] .= sum(LF.Jz, dims=4)[:]
+    @inbounds MF.Jx[M.location] .= sum(LF.Jx, dims=4)
+    @inbounds MF.Jy[M.location] .= sum(LF.Jy, dims=4)
+    @inbounds MF.Jz[M.location] .= sum(LF.Jz, dims=4)
 end
 
 function updatePbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedium3D, g::Grid3D)
@@ -384,7 +432,7 @@ function updatePbound!(MF::MaterialFields3D, LF::LorentzFields3D, M::LorentzMedi
                     LF.Pz[mm, nn, pp, osci] = LF.Pz[mm, nn, pp, osci] + g.Δt * (LF.Jz[mm,nn,pp, osci])
         end;end;end
     end
-    @inbounds MF.Pz[M.location] .= sum(LF.Pz, dims=4)[:]
+    @inbounds MF.Pz[M.location] .= sum(LF.Pz, dims=4)
 end
 
 function updatePNl!(MF::MaterialFields3D, LF::LorentzFields3D, F::Fields3D, M::LorentzMedium3D)
@@ -393,9 +441,30 @@ function updatePNl!(MF::MaterialFields3D, LF::LorentzFields3D, F::Fields3D, M::L
         @. LF.PyNl[:, :, :, osci] = ϵ_0 * (M.χ_1[osci]*F.Ey[M.location] + M.χ_2[osci] * (F.Ex[M.location]^2 + F.Ey[M.location]^2 + F.Ez[M.location]^2) + M.χ_3[osci] * (F.Ex[M.location]^2 + F.Ey[M.location]^2 + F.Ez[M.location]^2) * F.Ey[M.location])
         @. LF.PzNl[:, :, :, osci] = ϵ_0 * (M.χ_1[osci]*F.Ez[M.location] + M.χ_2[osci] * (F.Ex[M.location]^2 + F.Ey[M.location]^2 + F.Ez[M.location]^2) + M.χ_3[osci] * (F.Ex[M.location]^2 + F.Ey[M.location]^2 + F.Ez[M.location]^2) * F.Ez[M.location])
     end
-    @inbounds MF.PxNl[M.location] .= sum(LF.PxNl, dims=4)[:]
-    @inbounds MF.PyNl[M.location] .= sum(LF.PyNl, dims=4)[:]
-    @inbounds MF.PzNl[M.location] .= sum(LF.PzNl, dims=4)[:]
+    @inbounds MF.PxNl[M.location] .= sum(LF.PxNl, dims=4)
+    @inbounds MF.PyNl[M.location] .= sum(LF.PyNl, dims=4)
+    @inbounds MF.PzNl[M.location] .= sum(LF.PzNl, dims=4)
+end
+
+function updateJfree!(MF::MaterialFields3D, DF::DrudeFields3D, F::Fields3D, M::DrudeMedium3D)
+    @inbounds begin
+        @. DF.Jz_free[:, :, :] = (1 - M.Γ)/(1 + M.Γ) * DF.Jz_free[:, :, :] + ϵ_0 * M.grid.Δt * ω_plasma(MF.ρ_cb[M.location] * M.ρ_mol_density)^2 * F.Ez[M.location]/(1 + M.Γ)
+        MF.Jz_free[M.location] .= DF.Jz_free
+    end
+end
+
+function updateJtunnel!(MF::MaterialFields3D, TF::TunnelFields3D, M::TunnelMedium3D)
+    @inbounds begin 
+        @. TF.Jz_tunnel[:, :, :] = q_0 * TF.dz_T[:, :, :]*(1 - MF.ρ_cb[M.location])*MF.Γ_ADK[M.location]
+        MF.Jz_tunnel[M.location] .= TF.Jz_tunnel
+    end
+end
+
+function updatePlasma!(MF::MaterialFields3D, TF::TunnelFields3D, FC::FieldIonizationCoefficients3D, F::Fields3D, M::TunnelMedium3D)
+    update_Γ_ADK!(MF, F, FC, M)
+    #update_cb_population!(MF, M)
+    update_ρ!(MF, M)
+    update_displacement!(TF, F, M)
 end
 
 function update_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)

@@ -165,17 +165,52 @@ end
 
 mutable struct MaterialFields3D <:Field
     Jx :: Array{Float64, 3}
-    Jy :: Array{Float64, 3}
-    Jz :: Array{Float64, 3}
     Px :: Array{Float64, 3}
+    PxNl :: Array{Float64, 3}
+
+    Jx_bound :: Array{Float64, 3}
+    Jx_free :: Array{Float64, 3}
+    Jx_tunnel :: Array{Float64, 3}
+
+    Jy :: Array{Float64, 3}
     Py :: Array{Float64, 3}
+    PyNl :: Array{Float64, 3}
+
+    Jy_bound :: Array{Float64, 3}
+    Jy_free :: Array{Float64, 3}
+    Jy_tunnel :: Array{Float64, 3}
+
+    Jz :: Array{Float64, 3}
     Pz :: Array{Float64, 3}
+    PzNl :: Array{Float64, 3}
+
+    Jz_bound :: Array{Float64, 3}
+    Jz_free :: Array{Float64, 3}
+    Jz_tunnel :: Array{Float64, 3}
+
+    ρ_cb :: Array{Float64, 3}
+    Γ_ADK :: Array{Float64, 3}
     function MaterialFields3D(g::Grid3D)
         new(zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)),
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)), 
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)),
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)),
+            
+            zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ)),
             zeros(Float64, (g.SizeX, g.SizeY, g.SizeZ))
             )
     end
@@ -206,6 +241,36 @@ mutable struct LorentzFields3D <: Field
     end
 end
 
+mutable struct DrudeFields3D <: Field
+    Jx_free :: Array{Float64, 3}
+    Jy_free :: Array{Float64, 3}
+    Jz_free :: Array{Float64, 3}
+    function DrudeFields3D(m::DrudeMedium3D)
+        new(
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3]))
+        )
+    end
+end
+mutable struct TunnelFields3D <: Field
+    Jx_tunnel :: Array{Float64, 3}
+    dx_T :: Array{Float64, 3}
+    Jy_tunnel :: Array{Float64, 3}
+    dy_T :: Array{Float64, 3}
+    Jz_tunnel :: Array{Float64, 3}
+    dz_T :: Array{Float64, 3}
+    function TunnelFields3D(m::TunnelMedium3D)
+        new(
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])), 
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3])),
+            zeros(Float64, (size(m.location)[1], size(m.location)[2], size(m.location)[3]))
+            )
+    end
+end
 mutable struct CPML_Ψ_Fields_3D
     #=
         the last dimension is necessary to prevent creating 2 Array for top and bottom PML (--> symmetrical PML)

@@ -227,6 +227,16 @@ struct GridCoefficients3D_w_CPML <: Coeff
         new(g, Chxh, Chxe, Chyh, Chye, Chzh, Chze, Cexh, Cexe, Ceyh, Ceye, Cezh, Ceze, Den_Hx, Den_Ex, Den_Hy, Den_Ey, Den_Hz, Den_Ez)
     end
 end
+mutable struct FieldIonizationCoefficients3D <: Coeff
+    grid :: Grid3D
+    gamma_au :: Array{Float64, 3}
+    function FieldIonizationCoefficients3D(g::Grid3D)
+        new(
+            g, 
+            zeros(Float64, g.SizeX, g.SizeY, g.SizeZ)
+        )
+    end
+end
 
 struct GridCoefficients1D_w_CPML <: Coeff
     grid :: Grid1D

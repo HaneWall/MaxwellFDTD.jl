@@ -1,5 +1,30 @@
 using SpecialFunctions
 
+function Γ_ADK(E::Array{Float64, 3}, Gamma_arr::Array{Float64, 3}, I_p::Float64, Z::Int64, l::Int64, m::Int64)
+    I_p_au=I_p/q_0/27.21139609 #au in eV
+    κ=sqrt(2*I_p_au)
+    ns=Z/κ
+    ls=ns-1
+    F=abs.(E .+ 1e-6)./5.14220652e11    #E field in au
+
+    A_lm=((2*l+1)*factorial(l+abs(m)))/(2^(abs(m))*factorial(abs(m))*factorial(l-abs(m)))
+
+    C_nsls_abs_squared=2^(2*ns)/(ns*gamma(ns+ls+1)*gamma(ns-ls))
+    @inbounds for pp in 1:size(E)[3] 
+        for nn in 1:size(E)[2]
+            for mm in 1:size(E)[1]
+                Gamma_arr[mm, nn, pp] = C_nsls_abs_squared*A_lm*I_p_au*(2*κ^3/F[mm, nn, pp])^(2*ns-abs(m)-1)*exp(-(2*κ^3/(3*F[mm, nn, pp])))
+    end;end;end
+    # if maximum(Gamma_arr) != 0.0
+    #     print("works:")
+    #     print(maximum(Gamma_arr))
+    # end
+    Γ=Gamma_arr./24.18884336e-18
+    Γ[isnan.(Γ)].=0
+    Γ[isinf.(Γ)].=0
+    return Γ
+end
+
 function Γ_ADK(E::Array{Float64, 2}, Gamma_arr::Array{Float64, 2}, I_p::Float64, Z::Int64, l::Int64, m::Int64)
     I_p_au=I_p/q_0/27.21139609 #au in eV
     κ=sqrt(2*I_p_au)
@@ -14,6 +39,10 @@ function Γ_ADK(E::Array{Float64, 2}, Gamma_arr::Array{Float64, 2}, I_p::Float64
         for mm in 1:size(E)[1]
             Gamma_arr[mm, nn] = C_nsls_abs_squared*A_lm*I_p_au*(2*κ^3/F[mm, nn])^(2*ns-abs(m)-1)*exp(-(2*κ^3/(3*F[mm, nn])))
     end;end
+    # if maximum(Gamma_arr) != 0.0
+    #     print("works:")
+    #     print(maximum(Gamma_arr))
+    # end
     Γ=Gamma_arr./24.18884336e-18
     Γ[isnan.(Γ)].=0
     Γ[isinf.(Γ)].=0
