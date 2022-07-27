@@ -11,6 +11,7 @@ module MaxwellFDTD
     include("fft_utilities.jl")
     include("tunnelionisation_utilities.jl")
     include("visuals.jl")
+    include("utilities.jl")
     
     export c_0, μ_0, ϵ_0, q_0, m_e
     export GaussianPointSource, GaussianWavePointSource, GaussianWavePointSource2D, GaussianWavePointSource3D, SinusoidalPointSource, RickerPointSource, RickerPointSource3D, sourceE!, sourceH!, intensity2amplitude, laserfluence
@@ -24,5 +25,6 @@ module MaxwellFDTD
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium2D, TunnelMedium2D, LorentzMedium2D, DrudeMedium2D, StaticMedium3D, TunnelMedium3D, LorentzMedium3D, DrudeMedium3D
     export mytukey
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m
-    export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot
+    export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot, plot_log10_power_spectrum_current_and_E
+    export E_reflection_for_χ
 end
