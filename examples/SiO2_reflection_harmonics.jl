@@ -163,43 +163,53 @@ CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3), " seconds")
 println("Computation Complete")
 
-## 
-timeseries_plot(
-    d4.Ez, 
-    "E_{z, refl}", 
-    "detector_SF.pdf")
+# ## 
+# timeseries_plot(
+#     d4.Ez, 
+#     "E_{z, refl}", 
+#     "detector_SF.pdf")
 
-##
-timeseries_plot(
-    d2.Ez, 
-    "E_{z, first cell medium}", 
-    "detector_first_cell.pdf")
+# ##
+# timeseries_plot(
+#     d2.Ez, 
+#     "E_{z, first cell medium}", 
+#     "detector_first_cell.pdf")
 
-##
-timeseries_plot(
-    d3.Ez, 
-    "E_{z, 7000 cells inside}", 
-    "detector_mid.pdf")
+# ##
+# timeseries_plot(
+#     d3.Ez, 
+#     "E_{z, 7000 cells inside}", 
+#     "detector_mid.pdf")
 
-##
-plot_log10_power_spectrum(
-    Array(80000*g.Δt:g.Δt:100000*g.Δt),
-    hcat(d2.J_Free[80000:100000], d2.J_Bound[80000:100000],
-        d2.J_Tunnel[80000:100000]),
-    ω_central,
-    [0.0, 20.0],
-    [0.0, 25.0],
-    ["J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
-    true,
-   "tangentadk_a_13.pdf")
+# ##
+# plot_log10_power_spectrum(
+#     Array(80000*g.Δt:g.Δt:100000*g.Δt),
+#     hcat(d2.J_Free[80000:100000], d2.J_Bound[80000:100000],
+#         d2.J_Tunnel[80000:100000]),
+#     ω_central,
+#     [0.0, 20.0],
+#     [0.0, 25.0],
+#     ["J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
+#     true,
+#    "tangentadk_a_13.pdf")
 
-##
-plot_log10_power_spectrum_current_and_E(
-    Array(80000*g.Δt:g.Δt:100000*g.Δt),
-    hcat(d2.Jz[80000:100000], d4.Ez[94500:114500], d2.J_Free[80000:100000], d2.J_Bound[80000:100000], d2.J_Tunnel[80000:100000]),
-    ω_central,
-    [0.0, 20.0],
-    [0.0, 1.0],
-    ["J_z", "E_{z, Refl}", "J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
-    true,
-    "Reflection_tangentadk_a_13.pdf")
+# ##
+# plot_log10_power_spectrum_current_and_E(
+#     Array(80000*g.Δt:g.Δt:100000*g.Δt),
+#     hcat(d2.Jz[80000:100000], d4.Ez[94500:114500], d2.J_Free[80000:100000], d2.J_Bound[80000:100000], d2.J_Tunnel[80000:100000]),
+#     ω_central,
+#     [0.0, 20.0],
+#     [0.0, 1.0],
+#     ["J_z", "E_{z, Refl}", "J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
+#     true,
+#     "Reflection_tangentadk_a_13.pdf")
+
+# ## Theoretical Reflection coefficients - Only Bound Electrons - linear and kerr ]]
+# function get_kerr_reflection(χ_1::Float64, χ_3::Float64, E::Array{Float64, 1})
+#     E_L = E_reflection_for_χ(E, χ_1, 1., 1.) 
+#     E_K = E_reflection_for_χ(E, χ_3, 3., 1.)  
+#     E_ovr = E_L + E_K
+#     E = hcat(E_L, E_k, E_ovr)
+# return 
+
+## Theoretical 

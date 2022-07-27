@@ -33,6 +33,8 @@ function polar_angle_3p(px::Int64, py::Int64, pz::Int64)
     return ϕ
 end
 
-function reflection_for_χ(θ::Float64, χ::Float64, order::Float64, n_r::Float64)
-    
+function E_reflection_for_χ(E::Array{Float64, 1}, χ::Float64, order::Float64, n_r::Float64)
+    ## if order bigger than 3 (i.e. effective nonlinearity), one should use the perturbation approximation (χ via E_{atom}) 
+    Pz =  χ .* E.^order 
+    return Pz./(2*n_r*(1+ n_r))
 end
