@@ -1,7 +1,8 @@
 # MaxwellFDTD
 Implementations
 ---------------
-
+* CPML in 1D/2D/3D :heavy_check_mark:
+    * not as efficient in 1D/2D as in 3D :warning:
 * Kerrmodel in 1D/2D/3D :heavy_check_mark:
 * Drudemodel in 1D/2D/3D :heavy_check_mark:
 * Tunnelionisation in 1D/2D/3D :heavy_check_mark:
