@@ -287,6 +287,42 @@ function plot_log10_power_spectrum_current_and_E(t::Array{Float64,1}, signal::Ma
 end
 
 
+function plot_log10_power_spectrum_current_and_j_theory(t::Array{Float64,1}, signal::Matrix, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::Vector{String}, padding::Bool, name::String)
+    fig = Figure(resolution = (400, 400), font = "CMU Serif")
+    ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")
+    L = length(t)
+    padded_L = nextpow(2, L)
+    center_help_L_low = floor(Int64, (padded_L - L)/2) 
+    center_help_L_high = floor(Int64, L + center_help_L_low - 1) 
+    δt = abs(t[2]-t[1])
+    δf = 1/δt
+    ω = 2*π*fftshift(fftfreq(padded_L, δf))./ω_central
+    window = blackman(L)
+    max_arr = 0.
+    for idx in 1:size(signal)[2]
+        sigpad = zeros(eltype(signal[:,idx]), padded_L)
+        sigpad[center_help_L_low:center_help_L_high] = window.*signal[:, idx]
+        FT = fftshift(fft(sigpad))
+        if idx == 1
+            jz = log10.(((abs.(FT)./padded_L).^2)) 
+            max_arr = maximum(jz)
+            lines!(ax, ω, jz./max_arr, label=L"%$(legend[idx])")
+        elseif idx == 2
+            res = log10.(((abs.(FT)./padded_L).^2))
+            shift = 0.85 - maximum(res./max_arr)
+            lines!(ax, ω,  res./max_arr .+ shift, label=L"%$(legend[idx])", linestyle = :dash)
+        else
+            j = log10.(((abs.(FT)./padded_L).^2)) 
+            lines!(ax, ω, j./max_arr, label=L"%$(legend[idx])")
+        end
+    end
+    axislegend(ax, position=:rt)
+    xlims!(ax, xlims[1], xlims[2])
+    ylims!(ax, ylims[1], ylims[2])
+    fig
+    save(name, fig)
+end
+
 function plot_log10_power_spectrum(t::Array{Float64,1}, signal::Array{Float64,1}, ω_central::Float64, xlims::Vector{Float64}, ylims::Vector{Float64}, legend::String, padding::Bool, name::String)
     fig = Figure(resolution = (800, 400), font = "CMU Serif")
     ax = Axis(fig[1, 1], xlabel=L"$\omega$ / $ \omega_{Pump}$", ylabel=L"\log_{10}|FFT(S(t)|^2")

@@ -148,7 +148,7 @@ for timestep in ProgressBar(1:g.MaxTime)
     apply_Ψ_E!(F_PML, F, g, c_PML)
 
     for d in detectors
-        #safeΓ_ADK!(d, MF, timestep)
+        safeΓ_ADK!(d, MF, timestep)
         safeJ_tunnel!(d, MF, timestep)
         safeJ_free!(d, MF, timestep)
         safeJ_bound!(d, MF, timestep)
@@ -162,6 +162,7 @@ end
 CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3), " seconds")
 println("Computation Complete")
+
 
 ## 
 timeseries_plot(
@@ -205,7 +206,7 @@ plot_log10_power_spectrum_current_and_E(
     "Reflection_tangentadk_a_13.pdf")
 
 ## Source for theoretical considerations 
-function gaussian(amplitude::Float64, S_c::Float64, Δt::Float64, t::Array{Float64,1}, t_step_peak::Float64, t_fwhm::Float64, ppw::Float64)
+function my_gaussian(amplitude::Float64, S_c::Float64, Δt::Float64, t::Array{Float64,1}, t_step_peak::Float64, t_fwhm::Float64, ppw::Float64)
     src = zeros(Float64, size(t)[1])
     for idx in 1:size(t)[1]
         src[idx] = amplitude * exp(-2 * log(2) * (((t[idx] - t_step_peak)) * Δt / t_fwhm)^2) * sin(2 * π / ppw * (S_c * t[idx]))
@@ -214,10 +215,10 @@ function gaussian(amplitude::Float64, S_c::Float64, Δt::Float64, t::Array{Float
 end
 
 S_C = courant
-t_arr = Array(65000.0:1.0:85000.0)
+t_arr = Array(66000.0:1.0:86000.0)
 t_peak = 500e-15 / g.Δt
 t_real = t_arr .* g.Δt
-E_arr = gaussian(amplitude_pump, S_C, g.Δt, t_arr, t_peak, t_fwhm, ppw)
+E_arr = my_gaussian(amplitude_pump, S_C, g.Δt, t_arr, t_peak, t_fwhm, ppw)
 
 ## Theoretical Reflection coefficients - Only Bound Electrons - linear and kerr
 function get_kerr_reflection(χ_1::Float64, χ_3::Float64, E::Array{Float64,1})
@@ -263,3 +264,14 @@ plot_log10_power_spectrum_current_and_E(
     ["J_z", "E_{z, Refl, a}", "J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
     true,
     "Reflection_tangentadk_a13_theory.pdf")
+
+plot_log10_power_spectrum_current_and_j_theory(
+    Array(80000*g.Δt:g.Δt:100000*g.Δt),
+    hcat(d2.Jz[80000:100000], E_refl_a[:, 2], d2.J_Free[80000:100000], d2.J_Bound[80000:100000], d2.J_Tunnel[80000:100000]),
+    ω_central,
+    [0.0, 20.0],
+    [0.0, 1.0],
+    ["J_z", "E_{z, Refl, a}", "J_{Brunel}", "J_{Kerr}", "J_{Injection}"],
+    true,
+    "Reflection_tangentadk_a13_theory_new.pdf"
+    )
