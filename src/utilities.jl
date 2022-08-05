@@ -29,12 +29,20 @@ function azimuthal_angle_2p(px::Int64, py::Int64)
 end
 
 function polar_angle_3p(px::Int64, py::Int64, pz::Int64)
-    ϕ = atan2(sqrt(px^2 + py^2)/pz)    
-    return ϕ
+    Θ = atan2(sqrt(px^2 + py^2)/pz)    
+    return Θ
 end
 
 function E_reflection_for_χ(E::Array{Float64, 1}, χ::Float64, order::Float64, n_r::Float64)
     ## if order bigger than 3 (i.e. effective nonlinearity), one should use the perturbation approximation (χ via E_{atom}) 
-    Pz =  χ .* E.^order 
+    Pz =  χ .* (E+0im).^order 
     return Pz./(2*n_r*(1+ n_r))
+end
+
+function χ_injection_stat(Γ̂::Float64, Ê::Float64, E_gap::Float64, n_0::Float64, eff_nl::Float64)
+    return E_gap * q_0 * n_0 * Γ̂ / Ê^(eff_nl - 1)
+end
+
+function χ_brunel_stat(Γ̂::Float64, Ê::Float64, n_0::Float64, eff_nl::Float64)
+    return n_0 * q_0^2 * Γ̂ / (m_e * Ê^(eff_nl + 1))
 end

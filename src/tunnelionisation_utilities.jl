@@ -113,6 +113,21 @@ function ω_plasma(ρ::Float64)
     return abs(q_0^2 * ρ / (ϵ_0*m_e))^(1/2)
 end
 
+function binomial_degen(m::Integer, n_pump_up::Integer, n_pump_down::Integer)
+    degeneracy = factorial(m)/(factorial(n_pump_up) * factorial(n_pump_down))
+    return degeneracy
+end
+
+function binomial_degen(m::Float64, n_pump_up::Integer, n_pump_down::Integer)
+    degeneracy = gamma(m + 1)/(factorial(n_pump_up) * factorial(n_pump_down))
+    return degeneracy
+end
+
+function binomial_degen(m::Float64, harmonic::Integer)
+    degeneracy = gamma(m + 1)/(gamma((m + harmonic)/2 + 1) * gamma((m - harmonic)/2 + 1))
+    return degeneracy
+end
+
 function multinomial_degen(m::Integer, n_pump::Integer, n_probe::Integer)
     degeneracy = factorial(m)/(factorial(n_probe) * factorial((m + n_pump - n_probe)/2)* factorial((m - n_pump - n_probe)/2))
     return degeneracy

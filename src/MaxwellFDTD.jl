@@ -24,7 +24,7 @@ module MaxwellFDTD
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium2D, TunnelMedium2D, LorentzMedium2D, DrudeMedium2D, StaticMedium3D, TunnelMedium3D, LorentzMedium3D, DrudeMedium3D
     export mytukey
-    export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m
+    export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m, binomial_degen
     export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot, plot_log10_power_spectrum_current_and_E
-    export E_reflection_for_χ
+    export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat
 end
