@@ -18,7 +18,7 @@ start = time()
 SizeX = 6000
 courant = 0.5
 Δx = 10e-9
-MaxTime = 41000 
+MaxTime = 51000 
 
 # 1. define grid
 g = Grid1D(SizeX, courant, Δx, MaxTime)
@@ -108,15 +108,15 @@ a = 13.0
 
 for timestep in ProgressBar(1:g.MaxTime)
 
-    for (m_idx, m) in enumerate(tunnel_media)
-        updatePlasma!(MF, TF[m_idx], f_grid, F, m)
-        updateJtunnel!(MF, TF[m_idx], m)
-    end
-
     # for (m_idx, m) in enumerate(tunnel_media)
-    #     updatePlasmaTangent!(MF, TF[m_idx], f_grid, F, m, a, Γ̂, Ê)
+    #     updatePlasma!(MF, TF[m_idx], f_grid, F, m)
     #     updateJtunnel!(MF, TF[m_idx], m)
     # end
+
+    for (m_idx, m) in enumerate(tunnel_media)
+        updatePlasmaTangent!(MF, TF[m_idx], f_grid, F, m, a, Γ̂, Ê)
+        updateJtunnel!(MF, TF[m_idx], m)
+    end
 
     # for (m_idx, m) in enumerate(drude_media)
     #     updateJfree!(MF, DF[m_idx], F, m)
@@ -156,7 +156,7 @@ for timestep in ProgressBar(1:g.MaxTime)
         safeJ_free!(d, MF, timestep)
         safeJ_bound!(d, MF, timestep)
         safeE!(d, F, timestep)
-        #safeP!(d, MF, timestep)
+        safeP!(d, MF, timestep)
         safeJ!(d, MF, timestep)
         #safePNl!(d, MF, timestep)
     end
@@ -185,15 +185,15 @@ println("Computation Complete")
 #     "detector_mid.pdf")
 
 # ##
-plot_log10_power_spectrum(
-    Array(30000*g.Δt:g.Δt:40000*g.Δt),
-    hcat(d2.J_Tunnel[30000:40000]),
-    ω_central,
-    [0.0, 20.0],
-    [0.0, 25.0],
-    ["J_{Injection}"],
-    true,
-    "ADK_only_injection.pdf")
+#plot_log10_power_spectrum(
+    #Array(30000*g.Δt:g.Δt:40000*g.Δt),
+    #hcat(d2.J_Tunnel[30000:40000]),
+    #ω_central,
+    #[0.0, 20.0],
+    #[0.0, 25.0],
+    #["J_{Injection}"],
+    #true,
+    #"Tangent_only_injection.pdf")
 
 ## same with only one cell --> nearly no cascade effects 
 CPUtic()
@@ -257,15 +257,15 @@ a = 13.0
 
 for timestep in ProgressBar(1:g_one_cell.MaxTime)
 
+    # for (m_idx, m) in enumerate(tunnel_media_)
+    #     updatePlasma!(MF_one, TF_[m_idx], f_grid_one, F_one, m)
+    #     updateJtunnel!(MF_one, TF_[m_idx], m)
+    # end
+
     for (m_idx, m) in enumerate(tunnel_media_)
-        updatePlasma!(MF_one, TF_[m_idx], f_grid_one, F_one, m)
+        updatePlasmaTangent!(MF_one, TF_[m_idx], f_grid_one, F_one, m, a, Γ̂, Ê)
         updateJtunnel!(MF_one, TF_[m_idx], m)
     end
-
-    # for (m_idx, m) in enumerate(tunnel_media)
-    #     updatePlasmaTangent!(MF, TF[m_idx], f_grid, F, m, a, Γ̂, Ê)
-    #     updateJtunnel!(MF, TF[m_idx], m)
-    # end
 
     # for (m_idx, m) in enumerate(drude_media)
     #     updateJfree!(MF, DF[m_idx], F, m)
@@ -315,15 +315,15 @@ CPUtoq()
 println("elapsed real time: ", round(time() - start; digits=3), " seconds")
 println("Computation Complete")
 
-plot_log10_power_spectrum(
-    Array(30000*g.Δt:g.Δt:40000*g.Δt),
-    hcat(d2_.J_Tunnel[30000:40000]),
-    ω_central,
-    [0.0, 20.0],
-    [0.0, 25.0],
-    ["J_{Injection}"],
-    true,
-    "ADK_only_injection_one_cell.pdf")
+# plot_log10_power_spectrum(
+#     Array(30000*g.Δt:g.Δt:40000*g.Δt),
+#     hcat(d2_.J_Tunnel[30000:40000]),
+#     ω_central,
+#     [0.0, 20.0],
+#     [0.0, 25.0],
+#     ["J_{Injection}"],
+#     true,
+#     "ADK_only_injection_one_cell.pdf")
 
 
 
@@ -346,6 +346,7 @@ E_arr = gaussian(amplitude_pump, S_C, g.Δt, t_arr, t_peak, t_fwhm, ppw)
 eff_nl = effective_nonlinearity_m(amplitude_pump, E_gap * q_0)
 χ_brunel = χ_brunel_stat(Γ̂, Ê, ρ_mol_density, eff_nl)
 χ_injection = χ_injection_stat(Γ̂, Ê, E_gap*q_0, ρ_mol_density, eff_nl)
+
 ## harmonics
 h_brunel = Array(1:2:13)
 h_injection = Array(1:2:11)
@@ -363,32 +364,100 @@ center_help_L_high = floor(Int64, L + center_help_L_low - 1)
 δf = 1/δt
 ω = 2*π*fftshift(fftfreq(padded_L, δf))./ ω_central
 window = blackman(L)
+signal_injection_theory = zeros(Float64, padded_L)
 signal_injection = zeros(Float64, padded_L)
 signal_injection_one = zeros(Float64, padded_L)
+signal_injection_theory[center_help_L_low:center_help_L_high] = window .* χ_injection .* (E_arr.+0im).^13
 signal_injection[center_help_L_low:center_help_L_high] = window.*d2.J_Tunnel[30000:40000]
 signal_injection_one[center_help_L_low:center_help_L_high] = window.*d2_.J_Tunnel[30000:40000]
+
+FT_injection_theory = fftshift(fft(signal_injection_theory))
 FT_injection = fftshift(fft(signal_injection))
 FT_injection_one = fftshift(fft(signal_injection_one)) 
 
 
 ## plot degens:
 fig_harm = Figure(resolution = (800, 800), font = "CMU Serif")
-ax = Axis(fig_harm[1, 1], title="Normed Injection amplitude and Degens")
+ax = Axis(fig_harm[1, 1], title="Normed Injection amplitude and degeneracies", subtitle="ADK")
 scatter!(h_injection, (normed_degen_injection))
 lines!(ω, (abs.(FT_injection)./maximum(abs.(FT_injection))), label="Bulk, first Cell")
 lines!(ω, (abs.(FT_injection_one)./maximum(abs.(FT_injection_one))), linestyle=:dash, color=:blue, label = "One Cell")
 ylims!(ax, [0.0, 1.0])
 xlims!(ax, [0.0, 15.0])
 axislegend(ax, position=:rt)
-ax2 = Axis(fig_harm[2, 1], title="log10 Normed Injection amplitude and Degens", xlabel = L"ω / ω_{pump}")
+ax2 = Axis(fig_harm[2, 1], title="log10 normed Injection amplitude and Degens, Tangent ADK", xlabel = L"ω / ω_{pump}")
 lines!(ω, log10.(abs.(FT_injection)./maximum(abs.(FT_injection))), color=:red, label = "Bulk, first Cell")
-lines!(ω, log10.(abs.(FT_injection_one)./maximum(abs.(FT_injection_one))), color=:red, linestyle=:dash, label="One Cell")
+lines!(ω, log10.((abs.(FT_injection_one)./maximum(abs.(FT_injection_one)))), color=:red, linestyle=:dash, label="One Cell")
+#lines!(ω, log10.((abs.(FT_injection_theory))./maximum(abs.(FT_injection_theory))), color=:green, label="Theory, Reflection")
 scatter!(h_injection, log10.(normed_degen_injection), color=:red)
 ylims!(ax2, [-5.0, 0.0])
 xlims!(ax2, [0.0, 15.0])
 axislegend(ax2, position=:rt)
 fig_harm
+#save("Degens_injection_ADK.pdf", fig_harm)
 
+## measured E_reflection 
+E_measured = d4.Ez[35000:45000]
+E_measured_one_cell = d4_.Ez[35000:45000]
+L = length(t_real)
+padded_L = nextpow(2, L)
+center_help_L_low = floor(Int64, (padded_L - L) / 2)
+center_help_L_high = floor(Int64, L + center_help_L_low - 1)
+δt = abs(t[2] - t[1])
+δf = 1 / δt
+ω = 2 * π * fftshift(fftfreq(padded_L, δf)) ./ ω_central
+reflection_amplitude_spectrum = zeros(Float64, padded_L) 
+reflection_amplitude_spectrum_one_cell = zeros(Float64, padded_L)
+window = blackman(L)
+reflection_amplitude_spectrum[center_help_L_low:center_help_L_high] = window .* E_measured
+reflection_amplitude_spectrum_one_cell[center_help_L_low:center_help_L_high] = window .* E_measured_one_cell
+FT_reflection = fftshift(fft(reflection_amplitude_spectrum))
+FT_reflection_one_cell = fftshift(fft(reflection_amplitude_spectrum_one_cell))
+
+j_measured = d2.Jz[30000:40000]
+j_amplitude_spectrum = zeros(Float64, padded_L)
+j_amplitude_spectrum[center_help_L_low:center_help_L_high] = window .* j_measured
+FT_j = fftshift(fft(j_amplitude_spectrum))
+
+j_measured_one_cell = d2_.Jz[30000:40000]
+j_amplitude_spectrum_one_cell = zeros(Float64, padded_L)
+j_amplitude_spectrum_one_cell[center_help_L_low:center_help_L_high] = window .* j_measured_one_cell
+FT_j_one_cell = fftshift(fft(j_amplitude_spectrum_one_cell))
+
+
+fig_refl = Figure(resolution = (800, 800), font="CMU Serif")
+ax1 = Axis(fig_refl[1, 1], xlabel=L"\omega / \omega_{pump}", title="Reflection amplitudes", subtitle="Tangent ADK, a= $eff_nl")
+lines!(ω, log10.((abs.(ω .*  FT_reflection)) ./ maximum(abs.( ω .* FT_reflection))), color=:blue, label=L"Bulk, \log_{10}\mid \omega E_z \mid")
+lines!(ω, log10.((abs.(ω .*  FT_reflection_one_cell)) ./ maximum(abs.(ω .* FT_reflection_one_cell))), color=:blue, linestyle=:dash, label=L"One Cell, \log_{10}\mid \omega E_z \mid")
+
+lines!(ω, log10.((abs.(FT_j)) ./ maximum(abs.(FT_j))), color=:red, label=L"Bulk, first Cell, \log_{10} \mid J_z \mid")
+lines!(ω, log10.((abs.(FT_j_one_cell)) ./ maximum(abs.(FT_j_one_cell))), color=:red, linestyle=:dash, label=L"One Cell, \log_{10}\mid J_z \mid")
+
+ylims!(ax1, [-5.0, 0.0])
+xlims!(ax1, [0.0, 15.0])
+axislegend(ax1, position=:rt)
+fig_refl
+#save("reflection_amplitude_only_injection_Tangent_ADK.pdf", fig_refl)
+
+
+## compare theory with simulation 
+j_in =  χ_injection .* E_arr.^13 
+j_real = χ_injection .* d2.Ez[30000:40000].^13
+# P_diff = ϵ_0 .* (P_in[2:end] - P_in[1:end-1]) / g.Δt
+fig_comp = Figure(resolution=(800, 800))
+ax1 = Axis(fig_comp[1, 1], title = "Comparison")
+lines!(log10.(abs.(j_in)), color=:red)
+lines!(log10.(abs.(j_real)), color=:black, linestyle=:dash)
+lines!(log10.(abs.(j_measured)), color=:green)
+# lines!(log10.(abs.(P_diff)), color=:black)
+ylims!(ax1, [0.0, 14.0])
+xlims!(ax1, [3000, 7000])
+ax2 = Axis(fig_comp[2, 1])
+lines!(ω, log10.(abs.(FT_injection_theory)), color=:red)
+lines!(ω, log10.(abs.(FT_injection)), color=:green)
+ylims!(ax2, [10.0, 17.0])
+xlims!(ax2, [0.0, 15.0])
+fig_comp
 # ##
 # plot_log10_power_spectrum_current_and_E(
 #     Array(80000*g.Δt:g.Δt:100000*g.Δt),

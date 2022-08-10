@@ -44,5 +44,27 @@ function χ_injection_stat(Γ̂::Float64, Ê::Float64, E_gap::Float64, n_0::Flo
 end
 
 function χ_brunel_stat(Γ̂::Float64, Ê::Float64, n_0::Float64, eff_nl::Float64)
-    return n_0 * q_0^2 * Γ̂ / (m_e * Ê^(eff_nl + 1))
+    return n_0 * q_0^2 * Γ̂ / (m_e * Ê^(eff_nl))
 end
+
+
+function n_bound(γ, ω_0, χ_1, ω)
+    ϵ_complex = epsilon_complex(γ, ω_0, χ_1, ω)
+    ϵ_real = real.(ϵ_complex)
+    ϵ_imag = imag.(ϵ_complex)
+    n_r =  zeros(Float64, size(ω)[1])
+    n_i =  zeros(Float64, size(ω)[1])
+    
+    @. n_r = sqrt(1/2 *(sqrt(ϵ_real^2 + ϵ_imag^2) + ϵ_real))
+    @. n_i = sqrt(1/2 *(sqrt(ϵ_real^2 + ϵ_imag^2) - ϵ_real))
+    return  [n_r, n_i]
+end
+
+function epsilon_complex(γ, ω_0, χ_1, ω)
+    eps_complex = zeros(ComplexF64, length(ω)) .+ 1.
+    for idx = 1:length(γ)
+        @. eps_complex += χ_1[idx] * (ω_0[idx]^2) / (ω_0[idx]^2 - ω^2 + 1im * γ[idx] * ω)
+    end
+    return eps_complex
+end
+
