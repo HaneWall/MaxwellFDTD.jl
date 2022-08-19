@@ -26,5 +26,5 @@ module MaxwellFDTD
     export mytukey
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m, binomial_degen
     export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot, plot_log10_power_spectrum_current_and_E
-    export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat
+    export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat, r_p, r_s, t_s, t_p, r_s_nl, n_bound, epsilon_complex
 end

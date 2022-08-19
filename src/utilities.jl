@@ -68,3 +68,26 @@ function epsilon_complex(γ, ω_0, χ_1, ω)
     return eps_complex
 end
 
+function r_s_nl(n_1::Float64, n_2::Float64)
+    return 1/ (2*n_2 * (n_1 + n_2))
+end
+
+function r_s_nl(n_1::Float64, n_2::Float64, θ_i::Float64, θ_t::Float64)
+    return 1/ (2*n_2*cosd(θ_t) * (n_1*cosd(θ_i) + n_2*cosd(θ_t)))
+end
+
+function r_s(n_1::Float64, n_2::Float64, θ_i::Float64, θ_t::Float64)
+    return (n_1 * cosd(θ_i) - n_2 * cosd(θ_t))/(n_1 * cosd(θ_i) + n_2 * cosd(θ_t))
+end
+
+function r_p(n_1::Float64, n_2::Float64, θ_i::Float64, θ_t::Float64)
+    return (n_2 * cosd(θ_i) - n_1 * cosd(θ_t))/(n_2 * cosd(θ_i) + n_1 * cosd(θ_t))
+end
+
+function t_s(n_1::Float64, n_2::Float64, θ_i::Float64, θ_t::Float64)
+    return (2*n_1*cosd(θ_i))/(n_1 * cosd(θ_i) + n_2 * cosd(θ_t))
+end
+
+function t_p(n_1::Float64, n_2::Float64, θ_i::Float64, θ_t::Float64)
+    return (2*n_1*cosd(θ_i))/(n_2 * cosd(θ_i) + n_1 * cosd(θ_t))
+end
