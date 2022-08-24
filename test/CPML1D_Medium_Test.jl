@@ -10,7 +10,7 @@ start = time()
 
 SizeX = 2000
 courant = 0.995
-Δx = 4.e-9
+Δx = 10e-9
 MaxTime = 30000
 
 PML_Thickness = [400]

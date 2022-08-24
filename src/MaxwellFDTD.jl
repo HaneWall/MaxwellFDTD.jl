@@ -19,12 +19,12 @@ module MaxwellFDTD
     export PointDetector, LineDetector, ZSliceDetector, YSliceDetector, XSliceDetector, BlockDetector, PlaneDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!, safeJ_tunnel!, safeJ_bound!, safeJ_free!
     export Grid1D, Grid2D, Grid3D
     export CPML_Ψ_Fields_3D, CPML_Ψ_Fields_2D, CPML_Ψ_Fields_1D, CPML_Parameters_3D, CPML_Parameters_2D, CPML_Parameters_1D
-    export GridCoefficients1D, GridCoefficients3D,  GridCoefficients1D_w_CPML, GridCoefficients2D_w_CPML, GridCoefficients3D_WIP, GridCoefficients3D_w_CPML, FieldIonizationCoefficients1D, FieldIonizationCoefficients2D, FieldIonizationCoefficients3D
+    export GridCoefficients1D, GridCoefficients2D, GridCoefficients3D,  GridCoefficients1D_w_CPML, GridCoefficients2D_w_CPML, GridCoefficients3D_WIP, GridCoefficients3D_w_CPML, FieldIonizationCoefficients1D, FieldIonizationCoefficients2D, FieldIonizationCoefficients3D
     export updateE!, updateH!, updateEWIP!, updateHWIP!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updatePlasmaTangent!, updateJfree!, updateJtunnel!, update_Ψ_E!, update_Ψ_H!, apply_Ψ_E!, apply_Ψ_H!
-    export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!
+    export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PeriodicBoundaryX, updateH!, updateE!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium2D, TunnelMedium2D, LorentzMedium2D, DrudeMedium2D, StaticMedium3D, TunnelMedium3D, LorentzMedium3D, DrudeMedium3D
     export mytukey
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m, binomial_degen
     export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot, plot_log10_power_spectrum_current_and_E
-    export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat, r_p, r_s, t_s, t_p, r_s_nl, n_bound, epsilon_complex
+    export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat, r_p, r_s, t_s, t_p, r_s_nl, n_bound, epsilon_complex, polarization_rotation_matrix_e, polarization_rotation_matrix_h
 end

@@ -10,17 +10,17 @@ start = time()
 
 const SizeX = 100
 const SizeY = 100
-const courant = 0.985 * 1.0/(sqrt(2.0))
+const courant = 0.98 * 1.0/(sqrt(2.0))
 
 const amplitude = 1.
 const ppw = 20.
 
 const Δx = Δy = 2e-9
-const MaxTime = 5000
+const MaxTime = 440
 
 function ricker(t,location)
     src = 0
-    delay = 700
+    delay = 60
     ppw = 30
     if t > delay
         arg = π * ((1/sqrt(3.0) * (t - (delay+1)) - location) / ppw - 1)
@@ -37,7 +37,7 @@ MF = MaterialFields2D(g)
 F_PML = CPML_Ψ_Fields_2D(g, PML_Thickness)
 c_PML = CPML_Parameters_2D(g, PML_Thickness)
 
-const m_location = CartesianIndices((30:70, 2:40))
+const m_location = CartesianIndices((60:100, 1:100))
 γ = [0., 0., 0.]
 ω_0 = [1.5494e16, 7.9514e15, 9.7766e13]
 χ_1 = [2.4272, 1.4617, 9.6536]
@@ -87,7 +87,7 @@ for timestep in ProgressBar(1:g.MaxTime)
     #     sourceE!(source, F, timestep)
     # end
 
-    F.Ez[50, 50] += ricker(timestep, 0)
+    F.Ez[40, 50] += ricker(timestep, 0)
 
     apply_Ψ_E!(F_PML, F, g, c_PML)
     

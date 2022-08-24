@@ -36,6 +36,33 @@ end
 #=
  These are the coefficients in the two-dimensional Case.
 =#
+struct GridCoefficients2D <: Coeff
+    grid :: Grid2D
+    Chxh :: Array{Float64, 2}
+    Chxe :: Array{Float64, 2}
+    Chyh :: Array{Float64, 2}
+    Chye :: Array{Float64, 2}
+    Cezh :: Array{Float64, 2}
+    Ceze :: Array{Float64, 2}
+
+    function GridCoefficients2D(g::Grid2D, m::Vector{T}) where T<:Medium
+        Chxh = fill(1.0,(g.SizeX, g.SizeY))
+        Chxe = fill(g.Δt/(μ_0 * g.Δy),(g.SizeX, g.SizeY))
+        Chyh = fill(1.0,(g.SizeX, g.SizeY))
+        Chye = fill(g.Δt/(μ_0 * g.Δx),(g.SizeX, g.SizeY))
+        Ceze = fill(1.0,(g.SizeX, g.SizeY))
+        Cezh = fill(g.Δt/(ϵ_0 * g.Δx),(g.SizeX, g.SizeY))
+        
+
+        for medium in m
+            Cezh[medium.location] .= Cezh[medium.location] ./ medium.ϵ_inf
+        end
+        
+        new(g, Chxh, Chxe, Chyh, Chye, Cezh, Ceze)
+    end
+end
+
+
 struct GridCoefficients2D_w_CPML <: Coeff
     grid :: Grid2D
     Chxh :: Array{Float64, 2}

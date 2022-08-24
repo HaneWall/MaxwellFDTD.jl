@@ -384,11 +384,11 @@ function σ_opt(m::Float64, Δx::Float64)
     return 0.8*(m+1)/(376.730 * Δx)
 end
 
-function σ_profile(arr::Array{Float64, 1}, thickness::Int64, Δx::Float64; m::Float64=4.0)
+function σ_profile(arr::Array{Float64, 1}, thickness::Int64, Δx::Float64; m::Float64=3.0)
     return σ_opt(m, Δx) .* ((thickness .- arr) ./ (thickness - 1)).^m
 end
 
-function σ_profile(idx::Int64, thickness::Int64, Δx::Float64; m::Float64=4.0)
+function σ_profile(idx::Int64, thickness::Int64, Δx::Float64; m::Float64=3.0)
     return σ_opt(m, Δx) * (idx - 1 / (thickness - 1)).^m
 end
 
@@ -400,7 +400,7 @@ function c_coeff(b::Array{Float64}, σ::Array{Float64}, κ::Array{Float64}, α::
     return (b .- 1).*σ ./ (σ .* κ .+ α .* κ.^2)
 end
 
-function κ_profile(arr::Array{Float64, 1}, thickness::Int64; m::Float64=4.0, κ_max::Float64=14.)
+function κ_profile(arr::Array{Float64, 1}, thickness::Int64; m::Float64=3.0, κ_max::Float64=14.)
     return 1 .+ (κ_max .-1).*((thickness .- arr)./(thickness - 1.)).^m
 end
 

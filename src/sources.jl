@@ -123,6 +123,18 @@ end
 #----------------------------------------------------------------------------------------------
 # two dimensional sources
 #----------------------------------------------------------------------------------------------
+struct GaussianPlaneWaveSource2D <: Source
+    grid :: Grid2D
+    location :: CartesianIndices
+    soft :: Bool
+    ϕ :: Float64 # Azimuth angle in degree
+    Θ :: Float64 # Polar angle in degree
+    ψ :: Float64 # Polarissation angle in degree
+    amplitude :: Float64
+    ppw :: Float64
+    t_fwhm :: Float64 
+    t_step_peak :: Float64
+end
 
 struct GaussianWavePointSource2D <: Source 
     grid:: Grid2D

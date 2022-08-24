@@ -38,7 +38,7 @@ F_PML = CPML_Ψ_Fields_3D(g, PML_Thickness)
 c_PML = CPML_Parameters_3D(g, PML_Thickness)
 
 const m_location = CartesianIndices((24:35, 15:21, 15:35))
-m = StaticMedium3D(g, m_location, 1.)
+m = StaticMedium3D(g, m_location, 2.)
 media = [m]
 
 c_grid = GridCoefficients3D_w_CPML(g, media, c_PML)
