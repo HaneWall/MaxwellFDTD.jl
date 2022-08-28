@@ -850,7 +850,7 @@ end
 function apply_Ψ_E!(PML::CPML_Ψ_Fields_3D, F::Fields3D, g::Grid3D, c::CPML_Parameters_3D)
     CB = (g.Δt/ϵ_0)
     CA = 1.
-
+    
     @. F.Ex[1:g.SizeX-1, 2:c.PML_Thickness[2], 2:g.SizeZ-1] += CB * PML.Ψ_Exy[1:g.SizeX-1, 2:c.PML_Thickness[2], 2:g.SizeZ-1, 1]
     @. F.Ex[1:g.SizeX-1, (g.SizeY+1-c.PML_Thickness[2]):(g.SizeY-1), 2:g.SizeZ-1] += CB * PML.Ψ_Exy[1:g.SizeX-1,(c.PML_Thickness[2]):-1:begin+1, 2:g.SizeZ-1, 2]
     

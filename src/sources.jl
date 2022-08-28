@@ -123,19 +123,33 @@ end
 #----------------------------------------------------------------------------------------------
 # two dimensional sources
 #----------------------------------------------------------------------------------------------
-struct GaussianPlaneWaveSource2D <: Source
-    grid :: Grid2D
-    location :: CartesianIndices
-    soft :: Bool
-    ϕ :: Float64 # Azimuth angle in degree
-    Θ :: Float64 # Polar angle in degree
-    ψ :: Float64 # Polarissation angle in degree
-    amplitude :: Float64
-    ppw :: Float64
-    t_fwhm :: Float64 
-    t_step_peak :: Float64
+struct GaussianPlaneWaveSource2D_y <: Source 
+grid:: Grid2D
+location :: CartesianIndices
+soft :: Bool
+sf_left :: Bool 
+amplitude :: Float64
+t_step_peak :: Float64
+t_fwhm :: Float64
+ppw :: Float64
 end
 
+function sourceE!(S::GaussianPlaneWaveSource2D_y, F::Fields2D, timestep::Int64)
+    if S.soft
+        F.Ez[S.location] .+= S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - ( - 0.5)))
+    else
+        F.Ez[S.location] .= S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - ( - 0.5)))
+    end
+end
+
+
+function sourceH!(S::GaussianPlaneWaveSource2D_y, F::Fields2D, timestep::Int64)
+    if S.soft && S.sf_left
+        F.Hy[S.location .- CartesianIndex(1, 0)] .-=  S.amplitude * exp(-2*log(2)*((timestep - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep))) / 376.730
+    else
+        F.Hy[S.location .- CartesianIndex(1, 0)] .-= 0
+    end
+end
 struct GaussianWavePointSource2D <: Source 
     grid:: Grid2D
     location :: CartesianIndex
@@ -169,8 +183,33 @@ end
 #----------------------------------------------------------------------------------------------
 # three dimensional sources
 #----------------------------------------------------------------------------------------------
-
-
+struct GaussianPlaneWaveSource3D_y <: Source 
+    grid:: Grid3D
+    location :: CartesianIndices
+    soft :: Bool
+    sf_left :: Bool 
+    amplitude :: Float64
+    t_step_peak :: Float64
+    t_fwhm :: Float64
+    ppw :: Float64
+    end
+    
+    function sourceE!(S::GaussianPlaneWaveSource3D_y, F::Fields3D, timestep::Int64)
+        if S.soft
+            F.Ez[S.location] .+= S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - ( - 0.5)))
+        else
+            F.Ez[S.location] .= S.amplitude * exp(-2*log(2)*(((timestep + 0.5) - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep + 0.5) - ( - 0.5)))
+        end
+    end
+    
+    
+    function sourceH!(S::GaussianPlaneWaveSource3D_y, F::Fields3D, timestep::Int64)
+        if S.soft && S.sf_left
+            F.Hy[S.location .- CartesianIndex(1, 0, 0)] .-=  S.amplitude * exp(-2*log(2)*((timestep - (S.t_step_peak))*S.grid.Δt/S.t_fwhm)^2) * sin(2*π/S.ppw * (S.grid.S_c * (timestep))) / 376.730
+        else
+            F.Hy[S.location .- CartesianIndex(1, 0, 0)] .-= 0
+        end
+    end
 struct RickerPointSource3D <: Source
     grid:: Grid3D
     location:: CartesianIndex

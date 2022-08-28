@@ -14,7 +14,7 @@ module MaxwellFDTD
     include("utilities.jl")
     
     export c_0, μ_0, ϵ_0, q_0, m_e
-    export GaussianPointSource, GaussianWavePointSource, GaussianWavePointSource2D, GaussianWavePointSource3D, SinusoidalPointSource, RickerPointSource, RickerPointSource3D, sourceE!, sourceH!, intensity2amplitude, laserfluence
+    export GaussianPointSource, GaussianWavePointSource, GaussianWavePointSource2D, GaussianPlaneWaveSource2D_y, GaussianPlaneWaveSource3D_y,  GaussianWavePointSource3D, SinusoidalPointSource, RickerPointSource, RickerPointSource3D, sourceE!, sourceH!, intensity2amplitude, laserfluence
     export Fields1D, Fields2D, Fields3D, MaterialFields1D, LorentzFields1D, DrudeFields1D, TunnelFields1D, MaterialFields2D, TunnelFields2D, DrudeFields2D, LorentzFields2D, MaterialFields3D, LorentzFields3D, DrudeFields3D, TunnelFields3D
     export PointDetector, LineDetector, ZSliceDetector, YSliceDetector, XSliceDetector, BlockDetector, PlaneDetector, safeE!, safeP!, safeJ!, safePNl!, safeΓ_ADK!, safeJ_tunnel!, safeJ_bound!, safeJ_free!
     export Grid1D, Grid2D, Grid3D
@@ -23,7 +23,7 @@ module MaxwellFDTD
     export updateE!, updateH!, updateEWIP!, updateHWIP!, updateJ!, updateJbound!, updatePbound!, updatePNl!, updatePlasma!, updatePlasmaTangent!, updateJfree!, updateJtunnel!, update_Ψ_E!, update_Ψ_H!, apply_Ψ_E!, apply_Ψ_H!
     export ABC!, LeftSideMurABC, RightSideMurABC, saveFields!, stepABC!, PeriodicBoundaryX, updateH!, updateE!
     export LorentzMedium1D, StaticMedium1D, TunnelMedium1D, DrudeMedium1D, StaticMedium2D, TunnelMedium2D, LorentzMedium2D, DrudeMedium2D, StaticMedium3D, TunnelMedium3D, LorentzMedium3D, DrudeMedium3D
-    export mytukey
+    export mytukey, analytic_signal, isolate_around_freq
     export Γ_ADK, Γ_Tangent, ω_plasma, linear_predictor, multinomial_degen, effective_nonlinearity_m, binomial_degen
     export record_arr_over_time, slide_arr_over_time, plot_amplitude_spectrum, plot_log10_amplitude_spectrum, plot_log10_power_spectrum, plot_Reflection_spectrum, permutation_plot, timeseries_plot, plot_log10_power_spectrum_current_and_E
     export E_reflection_for_χ, χ_brunel_stat, χ_injection_stat, r_p, r_s, t_s, t_p, r_s_nl, n_bound, epsilon_complex, polarization_rotation_matrix_e, polarization_rotation_matrix_h

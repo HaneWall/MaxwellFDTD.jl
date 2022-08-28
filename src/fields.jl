@@ -361,7 +361,8 @@ mutable struct CPML_Ψ_Fields_1D
     #=
         the last dimension is necessary to prevent creating 2 Array for top and bottom PML (--> symmetrical PML)
             example: Bottom: Ψ_Exy1 := Ψ_Exy[:, :, :, 1] , Top: Ψ_Exy2 := Ψ_Exy[:, :, :, 2]
-    =#
+            name convention: FIELD_Component_CubicFace_TOP/BOT
+            =#
     Ψ_Ezx :: Array{Float64, 2}
     Ψ_Hyx :: Array{Float64, 2}
 
