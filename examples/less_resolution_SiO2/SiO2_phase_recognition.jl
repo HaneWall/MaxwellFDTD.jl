@@ -62,7 +62,7 @@ F_PML = CPML_Ψ_Fields_1D(g, PML_Thickness)
 c_PML = CPML_Parameters_1D(g, PML_Thickness)
 
 # init the media (superposition of different effects, that act inside the medium)
-m1 = LorentzMedium1D(g, CartesianIndices((2999:5999,)), 1.0, γ_lorentz, ω_0, χ_1, χ_2, χ_3)
+m1 = LorentzMedium1D(g, CartesianIndices((3000:5999,)), 1.0, γ_lorentz, ω_0, χ_1, χ_2, χ_3)
 m2 = DrudeMedium1D(g, CartesianIndices((3000:5999,)), γ_plasma, ρ_mol_density)
 m3 = TunnelMedium1D(g, CartesianIndices((3000:5999,)), E_gap, ρ_mol_density)
 
@@ -72,7 +72,9 @@ tunnel_media = [m3]
 
 bound_media = [m1]
 # 4. define grid coefficients that respect ϵ_inf from the media 
+
 c_grid = GridCoefficients1D_w_CPML(g, bound_media, c_PML)
+#c_grid = GridCoefficients1D(g, bound_media)
 f_grid = FieldIonizationCoefficients1D(g)
 
 # 5. define fields inside the media
@@ -106,7 +108,8 @@ start = time()
 
 Ê = amplitude_pump
 Γ̂ = Γ_ADK(Ê, E_gap * q_0)
-a = 13.39
+#a = 13.39
+a = 13.00
 
 for timestep in ProgressBar(1:g.MaxTime)
 
@@ -132,7 +135,7 @@ for timestep in ProgressBar(1:g.MaxTime)
 
     updateJ!(MF)
 
-    update_Ψ_H!(F_PML, F, g, c_PML)
+    #update_Ψ_H!(F_PML, F, g, c_PML)
 
     updateH!(F, g, c_grid)
 
@@ -204,7 +207,7 @@ normed_degen_kerr = degen_kerr./maximum(degen_kerr)
 
 ## amplitude_spectrum Injection 
 L = length(t_real)
-padded_L = nextpow(2, L)
+padded_L = 4*nextpow(2, L)
 center_help_L_low = floor(Int64, (padded_L - L)/2)
 center_help_L_high = floor(Int64, L + center_help_L_low - 1) 
 δt = abs(t[2]-t[1])
@@ -222,47 +225,50 @@ tr_b = t_s.(n_real, 1., 0.0, 0.0)
 # P = (χ_1 .* (tr_a .* E_arr) + χ_3.*(tr_a .* E_arr).^3)
 
 
-E_measured_bulk = d2.Ez[30000:40000]
+window_idx = 30000:40000
+E_measured_bulk = d2.Ez[window_idx]
 E_amplitude_spectrum = zeros(Float64, padded_L)
-E_amplitude_spectrum[1:size(E_measured_bulk, 1)] = window .* E_measured_bulk
+E_amplitude_spectrum[window_idx] = window .* E_measured_bulk
 FT_E_bulk = fftshift(fft(E_amplitude_spectrum))
 
-j_brunel = d2.J_Free[30000:40000]
-j_inj = d2.J_Tunnel[30000:40000]
-j_kerr = d2.J_Bound[30000:40000]
-j_all = d2.Jz[30000:40000]
+j_brunel = d2.J_Free[window_idx]
+j_inj = d2.J_Tunnel[window_idx]
+j_kerr = d2.J_Bound[window_idx]
+j_all = d2.Jz[window_idx]
+
 
 signal_j_inj = zeros(Float64, padded_L)
-signal_j_inj[1:size(j_inj, 1)] = window .* j_inj 
+signal_j_inj[window_idx] = window .* j_inj 
 FT_J_inj = fftshift(fft(signal_j_inj))
 
 signal_j_brunel = zeros(Float64, padded_L)
-signal_j_brunel[1:size(j_brunel, 1)] = window .* j_brunel
+signal_j_brunel[window_idx] = window .* j_brunel
 FT_J_brunel = fftshift(fft(signal_j_brunel))
 
 signal_j_bound = zeros(Float64, padded_L)
-signal_j_bound[1:size(j_kerr, 1)] = window .* j_kerr
+signal_j_bound[window_idx] = window .* j_kerr
 FT_J_bound= fftshift(fft(signal_j_bound))
 
 signal_j_all = zeros(Float64, padded_L)
-signal_j_all[1:size(j_all, 1)] = window .* j_all
+signal_j_all[window_idx] = window .* j_all
 FT_J_all= fftshift(fft(signal_j_all)) 
 
-E_measured_reflection = d4.Ez[34984:44984]
+window_ref = 35000:45000
+E_measured_reflection = d4.Ez[window_ref]
 E_amplitude_spectrum_refl = zeros(Float64, padded_L)
-E_amplitude_spectrum_refl[1:size(E_measured_reflection, 1)] = window .* E_measured_reflection
+E_amplitude_spectrum_refl[window_ref] = window .* E_measured_reflection
 FT_E_bulk_refl = fftshift(fft(E_amplitude_spectrum_refl))
 
 function isolate_around_freq2(f::Array{Float64}, spec::Array{Complex{Float64}}, f_isolated::Float64, Δf::Float64, window::Bool=true)
     n_fft = size(f, 1)
-    n_half = Int(ceil(n_fft/2))
+    n_half = ceil(Int64, n_fft/2)
     δf = abs(f[1] - f[2])
     # find freqeuncy in f array
     f_pos = f[n_half:end] 
     f_idx = argmin(abs.(f_pos .- f_isolated))
     length_window = Δf / δf
-    f_idx_low = Int(f_idx - floor(length_window/2)) + n_half
-    f_idx_high = Int(f_idx + floor(length_window/2)) + n_half
+    f_idx_low = f_idx - floor(Int64, length_window/2) + n_half
+    f_idx_high = f_idx + floor(Int64, length_window/2) + n_half
     window_spec = f_idx_low:f_idx_high
     spec_new = zeros(Complex{Float64}, n_fft)
     spec_new[window_spec] .= spec[window_spec]
@@ -272,8 +278,66 @@ function isolate_around_freq2(f::Array{Float64}, spec::Array{Complex{Float64}}, 
     return spec_new
 end
 
+ks = [1.0 + 2. * i for i in 0:1:6]
+
+
+function get_phase_spectrum(ω::Array{Float64}, spec::Array{Complex{Float64}}, harmonics::Array{Float64}, padded_L::Int64)
+    L = size(harmonics, 1)
+    ϕs = zeros(Float64, L)
+    for (idx, k) in enumerate(harmonics)
+        kth_harmonic_idx = argmin(abs.(ω .- k))
+        # isolate spectra
+        FT_k = isolate_around_freq2(ω, spec, k, 2., false)
+        k_t = ifft(ifftshift(FT_k))
+        t = Array(1.:1.:padded_L)
+        t_ref = 0.
+        trash, ϕ = analytic_signal(real(k_t), t, t_ref)
+        ϕs[idx] = ϕ[kth_harmonic_idx]
+    end        
+    return ϕs
+end
+
+ϕ_brunel = get_phase_spectrum(Array(ω), FT_J_brunel, ks, padded_L)
+ϕ_E_r = get_phase_spectrum(Array(ω), FT_E_bulk_refl, ks, padded_L)
+ϕ_E_tr = get_phase_spectrum(Array(ω), FT_E_bulk, ks, padded_L)
+ϕ_Kerr = get_phase_spectrum(Array(ω), FT_J_bound, ks, padded_L)
+ϕ_Inj = get_phase_spectrum(Array(ω), FT_J_inj, ks, padded_L)
+ϕ_All = get_phase_spectrum(Array(ω), FT_J_all, ks, padded_L)
+fig = Figure(resolution = (600, 600), font="CMU Serif")
+ax1 = Axis(fig[1, 1])
+scatterlines!(ks, ϕ_brunel, label=L"\phi_{Brunel}")
+scatterlines!(ks, ϕ_E_r,label=L"\phi_{Er}")
+scatterlines!(ks, ϕ_E_tr,label=L"\phi_{Etr}")
+scatterlines!(ks, ϕ_Kerr, label=L"\phi_{Kerr}")
+scatterlines!(ks, ϕ_Inj,label=L"\phi_{Inje}")
+scatterlines!(ks, ϕ_All, label=L"\phi_{All}")
+axislegend(ax1, position=:lt)
+ax1.yticks = -3π:π/4:3π
+#ax1.ytickformat = ys -> ["$(y/pi)π" for y in ys]
+xlims!(ax1, [0, 14])
+fig
+
+
+using PyPlot
+#r = [1, 2, 3, 4, 5, 6, 7]
+r = ks
+fig = plt.figure()
+ax = fig.add_subplot(111, projection="polar")
+c = ax.scatter(ϕ_Inj, r, label=L"J_{Injection}")
+#d = ax.scatter(ϕ_Kerr, r, label="Kerr + Lin") 
+e = ax.scatter(ϕ_brunel, r, label=L"J_{Brunel}")
+f = ax.scatter(ϕ_E_r, r, label=L"E_{Reflection}")
+g = ax.scatter(ϕ_E_tr, r, label=L"E_{Transmission}")
+h = ax.scatter(ϕ_All, r, label=L"J_{All}")
+ax.legend(loc="best", bbox_to_anchor=(0.05, 0.3))
+ax[:grid](true)
+savefig("Phasen_gamma_1e15.pdf")
+
+
+
 #kth - Harmonics 
-k = 1.
+k = 7.
+kth_harmonic_idx = Int(argmin(abs.(ω .- k)))
 FT_E_k = isolate_around_freq2(Array(ω), FT_E_bulk, k, 2., false)
 FT_Er_k = isolate_around_freq2(Array(ω), FT_E_bulk_refl, k, 2., false)
 FT_j_harm_k = isolate_around_freq2(Array(ω), FT_J_all, k, 2., false)
@@ -288,15 +352,16 @@ j_inj_k_t = ifft(ifftshift(FT_j_inj_k))
 j_brunel_k_t = ifft(ifftshift(FT_j_brunel_k))
 j_kerr_k_t = ifft(ifftshift(FT_j_kerr_k))
 # getting phaseinformation
-t = Array(1.:1.:padded_L)
+t_help = Array(1.:1.:padded_L)
 t_ref = Float64(argmax(abs.(E_k_t)))
+#t_ref = 2000.
 t_ref_2 = Float64(argmax(abs.(Er_k_t)))
-z_e, ϕ_E = analytic_signal(real(E_k_t), t, t_ref)
-z_er, ϕ_Er = analytic_signal(real(Er_k_t), t, t_ref_2)
-z_j, ϕ_j = analytic_signal(real(j_k_t), t, t_ref)
-z_j_inj, ϕ_j_inj = analytic_signal(real(j_inj_k_t), t, t_ref)
-z_j_brunel, ϕ_j_brunel = analytic_signal(real(j_brunel_k_t), t, t_ref)
-z_j_kerr, ϕ_j_kerr = analytic_signal(real(j_kerr_k_t), t, t_ref)
+z_e, ϕ_E = analytic_signal(real(E_k_t), t_help, t_ref)
+z_er, ϕ_Er = analytic_signal(real(Er_k_t), t_help, t_ref_2)
+z_j, ϕ_j = analytic_signal(real(j_k_t), t_help, t_ref)
+z_j_inj, ϕ_j_inj = analytic_signal(real(j_inj_k_t), t_help, t_ref)
+z_j_brunel, ϕ_j_brunel = analytic_signal(real(j_brunel_k_t), t_help, t_ref)
+z_j_kerr, ϕ_j_kerr = analytic_signal(real(j_kerr_k_t), t_help, t_ref)
 
 fig = Figure(resolution = (800, 800), font="CMU Serif")
 ax1 = Axis(fig[1, 1])
@@ -307,7 +372,7 @@ lines!(ax1, abs.(j_inj_k_t)./maximum(abs.(j_inj_k_t)), label=L"J_{J_inj}")
 lines!(ax1, abs.(j_brunel_k_t)./maximum(abs.(j_brunel_k_t)), label=L"J_{Brunel}")
 lines!(ax1, abs.(j_kerr_k_t)./maximum(abs.(j_kerr_k_t)), linestyle=:dash, label=L"J_{Kerr}")
 axislegend(ax1, position=:rt)
-xlims!(ax1, [3000, 7000])
+xlims!(ax1, [30000, 45000])
 ax2 = Axis(fig[2, 1])
 lines!(ax2, ω, real(ϕ_E), label=L"E_{Bulk}")
 lines!(ax2, ω, real(ϕ_Er), label=L"E_{Refl}")
@@ -315,9 +380,11 @@ lines!(ax2, ω, real(ϕ_j), label=L"J_{all}")
 lines!(ax2, ω, real(ϕ_j_inj), label=L"J_{inj}")
 lines!(ax2, ω, real(ϕ_j_brunel), label=L"J_{Brunel}")
 lines!(ax2, ω, real(ϕ_j_kerr), label=L"J_{Kerr}")
+#scatter!(k, real(ϕ_j_kerr)[kth_harmonic_idx])
 axislegend(ax2, position=:rt)
 ylims!(ax2, [-π, π])
 ax2.yticks = -π:π/4:π
 ax2.ytickformat = ys -> ["$(y/pi)π" for y in ys]
 xlims!(ax2, [k-1, k+1])
 fig
+
