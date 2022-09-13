@@ -7,18 +7,14 @@ end
 
 function analytic_signal(x::Array{Float64}, t::Array{Float64}, t_ref::Float64)
     n_fft = size(x, 1)
-    n_half = ceil(n_fft / 2)
+    n_half = ceil(Int64, n_fft / 2)
     idx_ref = argmin(abs.(t .- t_ref))
-    shift = Int(n_half - idx_ref)
+    shift = n_half - idx_ref
     x_shifted = circshift(x, shift)
     X = fft(ifftshift(x_shifted))
     # mask out negative frequencies, double positive frequency spectrum -> exact amplitudes
     X_shifted = fftshift(X)
-    fig_test = Figure(resolution = (800, 800))
-    ax3 = Axis(fig_test[1, 1])
-    lines!(ax3, abs.(X_shifted))
-    fig_test
-    negative_frequency_domain = CartesianIndices(1:n_half)
+    negative_frequency_domain = 1:n_half
     X_shifted[negative_frequency_domain] .= 0 + 0im
     X_shifted .*= 2
     # ifft 
@@ -28,9 +24,9 @@ function analytic_signal(x::Array{Float64}, t::Array{Float64}, t_ref::Float64)
     circshift!(Re_z, shift)
     circshift!(Im_z, shift)
     z = Re_z + 1im*Im_z
-    X2 = X_shifted
-    noise_filter = abs.(X_shifted) .< maximum(abs.(X_shifted)/4)
-    X2[noise_filter] .= 0
+    # X2 = X_shifted
+    # noise_filter = abs.(X_shifted) .< maximum(abs.(X_shifted)/4)
+    # X2[noise_filter] .= 0 + 0im
     ϕ = angle.(X_shifted)
     return [z, ϕ]
 end
